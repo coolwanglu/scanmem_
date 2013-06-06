@@ -983,7 +983,7 @@ class GameConqueror():
         Gtk.main()
 
     def check_backend_version(self):
-        if self.backend.get_version() != str.encode(VERSION, 'raw_unicode_escape'):
+        if self.backend.get_version() != VERSION.encode('raw_unicode_escape'):
             self.show_error('Version of scanmem mismatched, you may encounter problems. Please make sure you are using the same version of Gamconqueror as scanmem.')
 
 

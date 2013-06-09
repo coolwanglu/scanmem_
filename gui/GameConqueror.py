@@ -359,7 +359,7 @@ class GameConqueror():
             try:
                 with open(dialog.get_filename(), 'wb') as f:
                     obj = {'cheat_list' : [list(i) for i in self.cheatlist_liststore]}
-                    f.write(str(obj).encode('raw_unicode_escape'));
+                    f.write(str(obj).encode('utf-8'));
             except:
                 pass
         dialog.destroy()
@@ -651,7 +651,7 @@ class GameConqueror():
         if thebytes is None:
             return None
         if typename in TYPENAMES_G2STRUCT:
-            return struct.unpack(TYPENAMES_G2STRUCT[typename], thebytes.encode('raw_unicode_escape'))[0]
+            return struct.unpack(TYPENAMES_G2STRUCT[typename], thebytes.encode('utf-8'))[0]
         elif typename == 'bytearray':
             return ' '.join(['%02x'%ord(i) for i in thebytes])
         else:
@@ -875,7 +875,7 @@ class GameConqueror():
             self.scanresult_liststore.clear()
             for line in lines:
                 line = line[line.find(b']')+1:]
-                (a, v, t) = list(map(str.strip, line.decode('raw_unicode_escape').split(',')[:3]))
+                (a, v, t) = list(map(str.strip, line.decode('utf-8').split(',')[:3]))
                 a = '%x'%(int(a,16),)
                 t = t[1:-1]
                 self.scanresult_liststore.append([a, v, t, True])
@@ -953,7 +953,7 @@ class GameConqueror():
         self.backend.send_command('dump %s %d %s' % (addr, length, f.name))
         self.command_lock.release()
 
-        data = f.read().decode('raw_unicode_escape')
+        data = f.read().decode('utf-8')
 
 #        lines = self.backend.send_command('dump %s %d' % (addr, length))
 #        data = ''
@@ -983,7 +983,7 @@ class GameConqueror():
         Gtk.main()
 
     def check_backend_version(self):
-        if self.backend.get_version() != VERSION.encode('raw_unicode_escape'):
+        if self.backend.get_version() != VERSION.encode('utf-8'):
             self.show_error('Version of scanmem mismatched, you may encounter problems. Please make sure you are using the same version of Gamconqueror as scanmem.')
 
 

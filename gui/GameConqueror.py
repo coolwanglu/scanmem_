@@ -648,15 +648,17 @@ class GameConqueror():
         return None
 
     # parse bytes dumped by scanmem into number, string, etc.
-    def bytes2value(self, typename, thebytes):
-        if thebytes is None:
+    def bytes2value(self, typename, thestr):
+        if thestr is None:
             return None
         if typename in TYPENAMES_G2STRUCT:
-            return struct.unpack(TYPENAMES_G2STRUCT[typename], thebytes.encode('raw_unicode_escape'))[0]
+            return struct.unpack(TYPENAMES_G2STRUCT[typename], thestr.encode('raw_unicode_escape'))[0]
+        elif typename == 'string':
+            return repr('%s'%(thestr,))[1:-1]
         elif typename == 'bytearray':
-            return ' '.join(['%02x'%ord(i) for i in thebytes])
+            return ' '.join(['%02x'%ord(i) for i in thestr])
         else:
-            return thebytes
+            return thestr
     
     def scan_for_addr(self, addr):
         bits = self.get_pointer_width()
@@ -876,7 +878,7 @@ class GameConqueror():
             self.scanresult_liststore.clear()
             for line in lines:
                 line = line[line.find(b']')+1:]
-                (a, v, t) = list(map(str.strip, line.decode('raw_unicode_escape').split(',')[:3]))
+                (a, v, t) = list(map(str.strip, line.decode().split(',')[:3]))
                 a = '%x'%(int(a,16),)
                 t = t[1:-1]
                 self.scanresult_liststore.append([a, v, t, True])
@@ -984,7 +986,7 @@ class GameConqueror():
         Gtk.main()
 
     def check_backend_version(self):
-        if self.backend.get_version() != VERSION.encode('raw_unicode_escape'):
+        if self.backend.get_version() != VERSION.encode():
             self.show_error('Version of scanmem mismatched, you may encounter problems. Please make sure you are using the same version of Gamconqueror as scanmem.')
 
 

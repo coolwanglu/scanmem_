@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding: raw_unicode_escape -*-
+# -*- coding: utf-8 -*-
 # HexView.py
 #
 # Extended by Wang Lu

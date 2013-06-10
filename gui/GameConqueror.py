@@ -28,6 +28,7 @@ import tempfile
 import platform
 import threading
 import time
+import json
 
 import gi
 from gi.repository import Gtk
@@ -337,8 +338,8 @@ class GameConqueror():
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
             try:
-                with open(dialog.get_filename(), 'rb') as f:
-                    obj = eval(f.read())
+                with open(dialog.get_filename()) as f:
+                    obj = json.load(f)
                     for row in obj['cheat_list']:
                         self.add_to_cheat_list(row[3],row[5],row[4],row[2])
             except:
@@ -357,9 +358,9 @@ class GameConqueror():
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
             try:
-                with open(dialog.get_filename(), 'wb') as f:
+                with open(dialog.get_filename(), 'w') as f:
                     obj = {'cheat_list' : [list(i) for i in self.cheatlist_liststore]}
-                    f.write(str(obj).encode('raw_unicode_escape'));
+                    json.dump(obj, f);
             except:
                 pass
         dialog.destroy()

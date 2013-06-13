@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
     GameConquerorBackend: communication with scanmem
     

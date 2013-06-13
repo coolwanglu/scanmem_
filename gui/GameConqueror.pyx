@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
     Game Conqueror: a graphical game cheating tool, using scanmem as its backend
     

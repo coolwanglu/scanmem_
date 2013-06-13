@@ -4,10 +4,10 @@ DATADIR=@PKGDATADIR@
 
 if [[ "$(id -u)" != "0" ]]; then
     if [ -e "/usr/bin/gksu" ]; then
-        exec gksu --sudo-mode --preserve-env --description "GameConqueror" "python3 -OO $DATADIR/GameConqueror.py"
+        exec gksu --sudo-mode --preserve-env --description "GameConqueror" "python3 -OO $DATADIR/main.py"
     else
-        exec beesu - "python3 -OO $DATADIR/GameConqueror.py"
+        exec beesu - "python3 -OO $DATADIR/main.py"
     fi
 else
-    exec python3 -OO "$DATADIR/GameConqueror.py"
+    exec python3 -OO "$DATADIR/main.py"
 fi

@@ -115,7 +115,7 @@ AC_ARG_ENABLE(gui, [AS_HELP_STRING([--enable-gui],
                  [enable_gui=true
                   AC_CONFIG_FILES([
                  gui/Makefile
-                 gui/consts.py
+                 gui/consts.pyx
                  gui/gameconqueror
                  ])],
                  [enable_gui=false]

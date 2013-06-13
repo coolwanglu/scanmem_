@@ -32,8 +32,8 @@ def check_scan_command (data_type, cmd, is_first_scan):
         return '" ' + cmd
     elif data_type == 'bytearray':
         cmd = cmd.strip() 
-        bytes = cmd.split(' ')
-        for byte in bytes:
+        thebytes = cmd.split(' ')
+        for byte in thebytes:
             if byte.strip() == '':
                 continue
             if len(byte) != 2:
@@ -67,7 +67,7 @@ def check_scan_command (data_type, cmd, is_first_scan):
             cmd = str(num)
 
         if data_type.startswith('int'):
-            if not (isinstance(num, int) or isinstance(num, long)):
+            if not isinstance(num, int):
                 raise ValueError('%s is not an integer' % (num,))
             if data_type == 'int':
                 width = 64
@@ -83,7 +83,7 @@ def check_scan_command (data_type, cmd, is_first_scan):
 def eval_operand(s):
     try:
         v = eval(s)
-        if isinstance(v, (int,long,float)):
+        if isinstance(v, (int,float)):
             return v
     except:
         pass

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
     Game Conqueror: a graphical game cheating tool, using scanmem as its backend
     
@@ -338,7 +337,7 @@ class GameConqueror():
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
             try:
-                with open(dialog.get_filename(), 'rb') as f:
+                with open(dialog.get_filename()) as f:
                     obj = json.load(f)
                     for row in obj['cheat_list']:
                         self.add_to_cheat_list(row[3],row[5],row[4],row[2])
@@ -358,7 +357,7 @@ class GameConqueror():
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
             try:
-                with open(dialog.get_filename(), 'wb') as f:
+                with open(dialog.get_filename(), 'w') as f:
                     obj = {'cheat_list' : [list(i) for i in self.cheatlist_liststore]}
                     json.dump(obj, f);
             except:
@@ -648,17 +647,17 @@ class GameConqueror():
         return None
 
     # parse bytes dumped by scanmem into number, string, etc.
-    def bytes2value(self, typename, bytes):
-        if bytes is None:
+    def bytes2value(self, typename, thestr):
+        if thestr is None:
             return None
         if typename in TYPENAMES_G2STRUCT:
-            return struct.unpack(TYPENAMES_G2STRUCT[typename], bytes)[0]
+            return struct.unpack(TYPENAMES_G2STRUCT[typename], thestr.encode('raw_unicode_escape'))[0]
         elif typename == 'string':
-            return repr('%s'%(bytes,))[1:-1]
+            return repr('%s'%(thestr,))[1:-1]
         elif typename == 'bytearray':
-            return ' '.join(['%02x'%ord(i) for i in bytes])
+            return ' '.join(['%02x'%ord(i) for i in thestr])
         else:
-            return bytes
+            return thestr
     
     def scan_for_addr(self, addr):
         bits = self.get_pointer_width()
@@ -877,8 +876,8 @@ class GameConqueror():
             # temporarily disable model for scanresult_liststore for the sake of performance
             self.scanresult_liststore.clear()
             for line in lines:
-                line = line[line.find(']')+1:]
-                (a, v, t) = list(map(str.strip, line.split(',')[:3]))
+                line = line[line.find(b']')+1:]
+                (a, v, t) = list(map(str.strip, line.decode().split(',')[:3]))
                 a = '%x'%(int(a,16),)
                 t = t[1:-1]
                 self.scanresult_liststore.append([a, v, t, True])
@@ -956,7 +955,7 @@ class GameConqueror():
         self.backend.send_command('dump %s %d %s' % (addr, length, f.name))
         self.command_lock.release()
 
-        data = f.read()
+        data = f.read().decode('raw_unicode_escape')
 
 #        lines = self.backend.send_command('dump %s %d' % (addr, length))
 #        data = ''
@@ -986,10 +985,9 @@ class GameConqueror():
         Gtk.main()
 
     def check_backend_version(self):
-        if self.backend.get_version() != VERSION:
+        if self.backend.get_version() != VERSION.encode():
             self.show_error('Version of scanmem mismatched, you may encounter problems. Please make sure you are using the same version of Gamconqueror as scanmem.')
 
-    
 
 if __name__ == '__main__':
     GObject.threads_init()

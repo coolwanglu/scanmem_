@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # HexView.py
 #
@@ -210,7 +209,7 @@ class AsciiText(BaseText):
         self.buffer.set_text('')
 
         bpl = self._parent.bpl
-        tot_lines = len(txt) / bpl
+        tot_lines = int(len(txt) / bpl)
 
         if len(txt) % bpl != 0:
             tot_lines += 1

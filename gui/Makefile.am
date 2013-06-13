@@ -11,6 +11,8 @@ gameconquerordir=$(datadir)/gameconqueror
 iconsdir=$(datadir)/pixmaps
 desktopdir=$(datadir)/applications
 
-all:
+all: gui
+
+gui:
 	python3 setup.py build_ext --inplace
 	if [ -d build ]; then rm -r build; fi

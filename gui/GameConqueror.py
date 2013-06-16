@@ -652,7 +652,7 @@ class GameConqueror():
         if thestr is None:
             return None
         if typename in TYPENAMES_G2STRUCT:
-            return struct.unpack(TYPENAMES_G2STRUCT[typename], thestr.encode('raw_unicode_escape'))[0]
+            return struct.unpack(TYPENAMES_G2STRUCT[typename], thestr.encode('latin-1'))[0]
         elif typename == 'string':
             return repr('%s'%(thestr,))[1:-1]
         elif typename == 'bytearray':
@@ -956,7 +956,7 @@ class GameConqueror():
         self.backend.send_command('dump %s %d %s' % (addr, length, f.name))
         self.command_lock.release()
 
-        data = f.read().decode('raw_unicode_escape')
+        data = f.read().decode('latin-1')
 
 #        lines = self.backend.send_command('dump %s %d' % (addr, length))
 #        data = ''

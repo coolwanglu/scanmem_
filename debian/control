@@ -1,0 +1,30 @@
+Source: scanmem
+Section: utils
+Priority: extra
+Maintainer: WANG Lu <coolwanglu@gmail.com>
+Build-Depends: debhelper (>= 8), autotools-dev, libreadline-dev, libtool
+Standards-Version: 3.9.3
+Homepage: http://code.google.com/p/scanmem/
+
+Package: scanmem
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Suggests: gameconqueror (>= 0.14)
+Description: Program to locate and modify a variable in a running process
+ Scanmem is a simple interactive debugging utility for Linux, used to locate
+ the address of a variable in a running process. This can be used for the
+ analysis or modification of a hostile process on a compromised machine, for
+ reverse engineering, or as a "pokefinder" to cheat at video games.
+
+Package: gameconqueror
+Architecture: all
+Depends: ${misc:Depends}, gksu, python3, python3-gi, gir1.2-gtk-3.0, scanmem (>= 0.14)
+Description: GUI for scanmem, a game hacking tool
+ Scanmem is a simple interactive debugging utility for Linux, used to locate
+ the address of a variable in a running process. This can be used for the
+ analysis or modification of a hostile process on a compromised machine, for
+ reverse engineering, or as a "pokefinder" to cheat at video games.
+ .
+ GameConqueror is a GUI for scanmem, aims to provide more features than
+ scanmem, and CheatEngline-alike user-friendly interface.
+

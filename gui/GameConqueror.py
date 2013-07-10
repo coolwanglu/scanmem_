@@ -124,7 +124,6 @@ class GameConqueror():
 
         self.scan_button = self.builder.get_object('Scan_Button')
         self.reset_button = self.builder.get_object('Reset_Button')
-        self.is_first_scan = True
 
         ###
         # Set scan data type
@@ -648,17 +647,17 @@ class GameConqueror():
         return None
 
     # parse bytes dumped by scanmem into number, string, etc.
-    def bytes2value(self, typename, thestr):
-        if thestr is None:
+    def bytes2value(self, typename, thebytes):
+        if thebytes is None:
             return None
         if typename in TYPENAMES_G2STRUCT:
-            return struct.unpack(TYPENAMES_G2STRUCT[typename], thestr.encode('latin-1'))[0]
+            return struct.unpack(TYPENAMES_G2STRUCT[typename], thebytes)[0]
         elif typename == 'string':
-            return repr('%s'%(thestr,))[1:-1]
+            return repr('%s'%(thebytes,))[3:-2]
         elif typename == 'bytearray':
-            return ' '.join(['%02x'%ord(i) for i in thestr])
+            return ' '.join(['%02x'%ord(i) for i in thebytes])
         else:
-            return thestr
+            return thebytes
     
     def scan_for_addr(self, addr):
         bits = self.get_pointer_width()
@@ -956,7 +955,7 @@ class GameConqueror():
         self.backend.send_command('dump %s %d %s' % (addr, length, f.name))
         self.command_lock.release()
 
-        data = f.read().decode('latin-1')
+        data = f.read()
 
 #        lines = self.backend.send_command('dump %s %d' % (addr, length))
 #        data = ''

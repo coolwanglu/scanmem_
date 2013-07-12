@@ -655,7 +655,7 @@ class GameConqueror():
         elif typename == 'string':
             return repr('%s'%(thebytes,))[3:-2]
         elif typename == 'bytearray':
-            return ' '.join(['%02x'%ord(i) for i in thebytes])
+            return ' '.join(['%02x'%i for i in thebytes])
         else:
             return thebytes
     

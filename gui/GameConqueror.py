@@ -641,7 +641,7 @@ class GameConqueror():
         if typename in TYPESIZES: # int or float type; fixed length
             return TYPESIZES[typename]
         elif typename == 'bytearray':
-            return (len(value.strip())+1)/3
+            return (len(value.strip())+1)//3
         elif typename == 'string':
             return len(eval('\''+value+'\''))
         return None
@@ -895,11 +895,11 @@ class GameConqueror():
         r1 = tup[0][0]
         tup = treeview.get_path_at_pos(x2, y2)
         if tup is None:
-            r2 = len(treeview.get_model()) - 1    
+            r2 = len(treeview.get_model()) - 1
         else:
             r2 = tup[0][0]
         return (r1, r2)
- 
+
     # read/write data periodically
     def data_worker(self):
         if (not self.is_scanning) and (self.pid != 0) and self.command_lock.acquire(0): # non-blocking

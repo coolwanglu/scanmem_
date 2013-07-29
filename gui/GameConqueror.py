@@ -595,6 +595,10 @@ class GameConqueror():
     def cheatlist_edit_type_cb(self, cell, path, new_text, data=None):
         self.cheatlist_editing = False
         row = int(path)
+        if new_text == 'bytearray':
+            self.cheatlist_liststore[row][5] = self.bytes2value(new_text, self.cheatlist_liststore[row][5].encode())
+        elif self.cheatlist_liststore[row][4] == 'bytearray':
+            self.cheatlist_liststore[row][5] = ''.join([chr(int(i,16)) if int(i,16) > 32 else ' ' for i in self.cheatlist_liststore[row][5].split()])
         self.cheatlist_liststore[row][4] = new_text
         if self.cheatlist_liststore[row][1]: # locked
             # false unlock it

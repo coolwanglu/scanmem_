@@ -377,32 +377,32 @@ class GameConqueror():
 
     def ScanResult_TreeView_button_release_event_cb(self, widget, event, data=None):
         if event.button == 3: # right click
-            (model, pathList) = self.scanresult_tv.get_selection().get_selected_rows()
-            if model.get_iter_first() is not None:
+            (model, pathlist) = self.scanresult_tv.get_selection().get_selected_rows()
+            if model.get_iter(pathlist[0]) is not None:
                 self.scanresult_popup.popup(None, None, None, None, event.button, event.get_time())
                 return True
             return False
         return False
 
     def ScanResult_TreeView_popup_menu_cb(self, widget, data=None):
-        (model, pathList) = self.scanresult_tv.get_selection().get_selected_rows()
-        if model.get_iter_first() is not None:
+        (model, pathlist) = self.scanresult_tv.get_selection().get_selected_rows()
+        if model.get_iter(pathlist[0]) is not None:
             self.scanresult_popup.popup(None, None, None, 0, 0)
             return True
         return False
 
     def CheatList_TreeView_button_release_event_cb(self, widget, event, data=None):
         if event.button == 3: # right click
-            (model, pathList) = self.cheatlist_tv.get_selection().get_selected_rows()
-            if model.get_iter_first() is not None:
+            (model, pathlist) = self.cheatlist_tv.get_selection().get_selected_rows()
+            if model.get_iter(pathlist[0]) is not None:
                 self.cheatlist_popup.popup(None, None, None, None, event.button, event.get_time())
                 return True
             return False
         return False
 
     def CheatList_TreeView_popup_menu_cb(self, widget, data=None):
-        (model, pathList) = self.cheatlist_tv.get_selection().get_selected_rows()
-        if model.get_iter_first() is not None:
+        (model, pathlist) = self.cheatlist_tv.get_selection().get_selected_rows()
+        if model.get_iter(pathlist[0]) is not None:
             self.cheatlist_popup.popup(None, None, None, 0, 0)
             return True
         return False
@@ -498,8 +498,8 @@ class GameConqueror():
         self.cheatlist_editing = False
 
     def scanresult_popup_cb(self, menuitem, data=None):
-        (model, pathList) = self.scanresult_tv.get_selection().get_selected_rows()
-        theiter = model.get_iter_first()
+        (model, pathlist) = self.scanresult_tv.get_selection().get_selected_rows()
+        theiter = model.get_iter(pathlist[0])
         (addr, value, typestr) = model.get(theiter, 0, 1, 2)
         if theiter is None:
             return False
@@ -518,15 +518,15 @@ class GameConqueror():
         keycode = event.keyval
         pressedkey = Gdk.keyval_name(keycode)
         if pressedkey in ['KP_Enter','Return','space']:
-            (model, listPath) = self.scanresult_tv.get_selection().get_selected_rows()
-            for i in listPath:
+            (model, pathlist) = self.scanresult_tv.get_selection().get_selected_rows()
+            for i in pathlist:
                 (addr, value, typestr) = model.get(model.get_iter(i), 0, 1, 2)
                 self.add_to_cheat_list(addr, value, typestr)
 
     def scanresult_buttonpressed(self, scanresult_tv, event, selection=None):
         if event.get_click_count()[1] > 1:
-            (model, listPath) = self.scanresult_tv.get_selection().get_selected_rows()
-            for i in listPath:
+            (model, pathlist) = self.scanresult_tv.get_selection().get_selected_rows()
+            for i in pathlist:
                 (addr, value, typestr) = model.get(model.get_iter(i), 0, 1, 2)
                 self.add_to_cheat_list(addr, value, typestr)
 
@@ -534,14 +534,14 @@ class GameConqueror():
         keycode = event.keyval
         pressedkey = Gdk.keyval_name(keycode)
         if pressedkey == 'Delete':
-            (model, listPath) = self.cheatlist_tv.get_selection().get_selected_rows()
-            for i in reversed(listPath):
+            (model, pathlist) = self.cheatlist_tv.get_selection().get_selected_rows()
+            for i in reversed(pathlist):
                 self.cheatlist_liststore.remove(model.get_iter(i))
 
     def cheatlist_popup_cb(self, menuitem, data=None):
         self.cheatlist_editing = False
-        (model, listPath) = self.cheatlist_tv.get_selection().get_selected_rows()
-        theiter = model.get_iter_first()
+        (model, pathlist) = self.cheatlist_tv.get_selection().get_selected_rows()
+        theiter = model.get_iter(pathlist[0])
         addr = model.get(theiter, 3)[0]
         if theiter is None:
             return False

@@ -149,6 +149,7 @@ class GameConqueror():
         self.scanresult_tv = self.builder.get_object('ScanResult_TreeView')
         self.scanresult_liststore = Gtk.ListStore(str, str, str, bool) #addr, value, type, valid
         self.scanresult_tv.set_model(self.scanresult_liststore)
+        self.scanresult_tv.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
         # init columns
         misc.treeview_append_column(self.scanresult_tv, 'Address', attributes=(('text',0),), properties = (('family', 'monospace'),))
         misc.treeview_append_column(self.scanresult_tv, 'Value', attributes=(('text',1),), properties = (('family', 'monospace'),))
@@ -157,6 +158,7 @@ class GameConqueror():
         self.cheatlist_tv = self.builder.get_object('CheatList_TreeView')
         self.cheatlist_liststore = Gtk.ListStore(str, bool, str, str, str, str, bool) #lockflag, locked, description, addr, type, value, valid
         self.cheatlist_tv.set_model(self.cheatlist_liststore)
+        self.cheatlist_tv.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
         self.cheatlist_tv.set_reorderable(True)
         self.cheatlist_updates = []
         self.cheatlist_editing = False
@@ -375,41 +377,32 @@ class GameConqueror():
 
     def ScanResult_TreeView_button_release_event_cb(self, widget, event, data=None):
         if event.button == 3: # right click
-            (model, iter) = self.scanresult_tv.get_selection().get_selected()
-            if iter is not None:
+            (model, pathList) = self.scanresult_tv.get_selection().get_selected_rows()
+            if model.get_iter_first() is not None:
                 self.scanresult_popup.popup(None, None, None, None, event.button, event.get_time())
                 return True
             return False
         return False
 
     def ScanResult_TreeView_popup_menu_cb(self, widget, data=None):
-        (model, iter) = self.scanresult_tv.get_selection().get_selected()
-        if iter is not None:
+        (model, pathList) = self.scanresult_tv.get_selection().get_selected_rows()
+        if model.get_iter_first() is not None:
             self.scanresult_popup.popup(None, None, None, 0, 0)
-            return True
-        return False
-
-    def ScanResult_TreeView_row_activated_cb(self, treeview, path, view_column, data=None):
-        # add to cheat list
-        (model, iter) = self.scanresult_tv.get_selection().get_selected()
-        if iter is not None:
-            (addr, value, typestr) = model.get(iter, 0, 1, 2)
-            self.add_to_cheat_list(addr, value, typestr)
             return True
         return False
 
     def CheatList_TreeView_button_release_event_cb(self, widget, event, data=None):
         if event.button == 3: # right click
-            (model, iter) = self.cheatlist_tv.get_selection().get_selected()
-            if iter is not None:
+            (model, pathList) = self.cheatlist_tv.get_selection().get_selected_rows()
+            if model.get_iter_first() is not None:
                 self.cheatlist_popup.popup(None, None, None, None, event.button, event.get_time())
                 return True
             return False
         return False
 
     def CheatList_TreeView_popup_menu_cb(self, widget, data=None):
-        (model, iter) = self.cheatlist_tv.get_selection().get_selected()
-        if iter is not None:
+        (model, pathList) = self.cheatlist_tv.get_selection().get_selected_rows()
+        if model.get_iter_first() is not None:
             self.cheatlist_popup.popup(None, None, None, 0, 0)
             return True
         return False
@@ -421,9 +414,9 @@ class GameConqueror():
         self.processlist_filter.refilter()
 
     def ProcessList_TreeView_row_activated_cb(self, treeview, path, view_column, data=None):
-        (model, iter) = self.processlist_tv.get_selection().get_selected()
-        if iter is not None:
-            (pid, user, process) = model.get(iter, 0, 1, 2)
+        (model, theiter) = self.processlist_tv.get_selection().get_selected()
+        if theiter is not None:
+            (pid, user, process) = model.get(theiter, 0, 1, 2)
             self.select_process(int(pid), process)
             self.process_list_dialog.response(Gtk.ResponseType.CANCEL)
             return True
@@ -439,12 +432,12 @@ class GameConqueror():
         while True:
             res = self.process_list_dialog.run()
             if res == Gtk.ResponseType.OK: # -5
-                (model, iter) = self.processlist_tv.get_selection().get_selected()
-                if iter is None:
+                (model, theiter) = self.processlist_tv.get_selection().get_selected()
+                if theiter is None:
                     self.show_error('Please select a process')
                     continue
                 else:
-                    (pid, process) = model.get(iter, 0, 1)
+                    (pid, process) = model.get(theiter, 0, 1)
                     self.select_process(int(pid), process)
                     break
             else: # for None and Cancel
@@ -505,9 +498,10 @@ class GameConqueror():
         self.cheatlist_editing = False
 
     def scanresult_popup_cb(self, menuitem, data=None):
-        (model, iter) = self.scanresult_tv.get_selection().get_selected()
-        (addr, value, typestr) = model.get(iter, 0, 1, 2)
-        if iter is None:
+        (model, pathList) = self.scanresult_tv.get_selection().get_selected_rows()
+        theiter = model.get_iter_first()
+        (addr, value, typestr) = model.get(theiter, 0, 1, 2)
+        if theiter is None:
             return False
         if data == 'add_to_cheat_list':
             self.add_to_cheat_list(addr, value, typestr)
@@ -519,23 +513,40 @@ class GameConqueror():
             self.scan_for_addr(int(addr,16))
             return True
         return False
-        
+
+    def scanresult_keypressed(self, scanresult_tv, event, selection=None):
+        keycode = event.keyval
+        pressedkey = Gdk.keyval_name(keycode)
+        if pressedkey in ['KP_Enter','Return','space']:
+            (model, listPath) = self.scanresult_tv.get_selection().get_selected_rows()
+            for i in listPath:
+                (addr, value, typestr) = model.get(model.get_iter(i), 0, 1, 2)
+                self.add_to_cheat_list(addr, value, typestr)
+
+    def scanresult_buttonpressed(self, scanresult_tv, event, selection=None):
+        if event.get_click_count()[1] > 1:
+            (model, listPath) = self.scanresult_tv.get_selection().get_selected_rows()
+            for i in listPath:
+                (addr, value, typestr) = model.get(model.get_iter(i), 0, 1, 2)
+                self.add_to_cheat_list(addr, value, typestr)
+
     def cheatlist_keypressed(self, cheatlist_tv, event, selection=None):
         keycode = event.keyval
         pressedkey = Gdk.keyval_name(keycode)
         if pressedkey == 'Delete':
-            (model, iter) = self.cheatlist_tv.get_selection().get_selected()
-            if iter is None: return
-            self.cheatlist_liststore.remove(iter) 
+            (model, listPath) = self.cheatlist_tv.get_selection().get_selected_rows()
+            for i in reversed(listPath):
+                self.cheatlist_liststore.remove(model.get_iter(i))
 
     def cheatlist_popup_cb(self, menuitem, data=None):
         self.cheatlist_editing = False
-        (model, iter) = self.cheatlist_tv.get_selection().get_selected()
-        addr = model.get(iter, 3)[0]
-        if iter is None:
+        (model, listPath) = self.cheatlist_tv.get_selection().get_selected_rows()
+        theiter = model.get_iter_first()
+        addr = model.get(theiter, 3)[0]
+        if theiter is None:
             return False
         if data == 'remove_entry':
-            self.cheatlist_liststore.remove(iter) 
+            self.cheatlist_liststore.remove(theiter) 
             return True
         elif data == 'browse_this_address':
             self.browse_memory(int(addr,16))
@@ -607,8 +618,8 @@ class GameConqueror():
             pass
         return True
 
-    def processlist_filter_func(self, model, iter, data=None):
-        (pid, user, process) = model.get(iter, 0, 1, 2)
+    def processlist_filter_func(self, model, theiter, data=None):
+        (pid, user, process) = model.get(theiter, 0, 1, 2)
         return process is not None and \
                 process.find(self.processfilter_input.get_text()) != -1 and \
                 user is not None and \

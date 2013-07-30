@@ -4,6 +4,7 @@
     
     Copyright (C) 2009,2010,2011,2013 Wang Lu <coolwanglu(a)gmail.com>
     Copyright (C) 2010 Bryan Cain
+    Copyright (C) 2013 Mattias <mattiasmun(a)gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -598,7 +599,7 @@ class GameConqueror():
         if new_text == 'bytearray':
             self.cheatlist_liststore[row][5] = self.bytes2value(new_text, self.cheatlist_liststore[row][5].encode())
         elif self.cheatlist_liststore[row][4] == 'bytearray':
-            self.cheatlist_liststore[row][5] = ''.join([chr(int(i,16)) if int(i,16) > 32 else ' ' for i in self.cheatlist_liststore[row][5].split()])
+            self.cheatlist_liststore[row][5] = ''.join([chr(max(int(i,16),32)) for i in self.cheatlist_liststore[row][5].split()])
         self.cheatlist_liststore[row][4] = new_text
         if self.cheatlist_liststore[row][1]: # locked
             # false unlock it
@@ -657,7 +658,7 @@ class GameConqueror():
         if typename in TYPENAMES_G2STRUCT:
             return struct.unpack(TYPENAMES_G2STRUCT[typename], thebytes)[0]
         elif typename == 'string':
-            return ''.join([chr(i) if i > 32 else ' ' for i in thebytes])
+            return ''.join([chr(max(i,32)) for i in thebytes])
         elif typename == 'bytearray':
             return ' '.join(['%02x'%i for i in thebytes])
         else:

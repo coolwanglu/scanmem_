@@ -387,7 +387,7 @@ class GameConqueror():
     def ScanResult_TreeView_popup_menu_cb(self, widget, data=None):
         (model, pathlist) = self.scanresult_tv.get_selection().get_selected_rows()
         if model.get_iter(pathlist[0]) is not None:
-            self.scanresult_popup.popup(None, None, None, 0, 0)
+            self.scanresult_popup.popup(None, None, None, None, 0, 0)
             return True
         return False
 
@@ -403,7 +403,7 @@ class GameConqueror():
     def CheatList_TreeView_popup_menu_cb(self, widget, data=None):
         (model, pathlist) = self.cheatlist_tv.get_selection().get_selected_rows()
         if model.get_iter(pathlist[0]) is not None:
-            self.cheatlist_popup.popup(None, None, None, 0, 0)
+            self.cheatlist_popup.popup(None, None, None, None, 0, 0)
             return True
         return False
 
@@ -504,7 +504,9 @@ class GameConqueror():
         if theiter is None:
             return False
         if data == 'add_to_cheat_list':
-            self.add_to_cheat_list(addr, value, typestr)
+            for i in pathlist:
+                (addr, value, typestr) = model.get(model.get_iter(i), 0, 1, 2)
+                self.add_to_cheat_list(addr, value, typestr)
             return True
         elif data == 'browse_this_address':
             self.browse_memory(int(addr,16))
@@ -546,7 +548,10 @@ class GameConqueror():
         if theiter is None:
             return False
         if data == 'remove_entry':
-            self.cheatlist_liststore.remove(theiter) 
+            for i in reversed(pathlist):
+                theiter = model.get_iter(i)
+                (addr, value, typestr) = model.get(theiter, 0, 1, 2)
+                self.cheatlist_liststore.remove(theiter)
             return True
         elif data == 'browse_this_address':
             self.browse_memory(int(addr,16))

@@ -62,6 +62,9 @@ def check_scan_command (data_type, cmd, is_first_scan):
         if cmd[:2] in ['+ ', '- ', '> ', '< ']:
             num = eval_operand(cmd[2:])
             cmd = cmd[:2] + str(num)
+        elif cmd[:3] ==  '!= ':
+            num = eval_operand(cmd[3:])
+            cmd = cmd[:3] + str(num)
         else:
             num = eval_operand(cmd)
             cmd = str(num)

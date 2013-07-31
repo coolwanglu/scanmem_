@@ -30,6 +30,7 @@ import platform
 import threading
 import time
 import json
+import math
 
 import gi
 from gi.repository import Gtk
@@ -378,7 +379,7 @@ class GameConqueror():
     def ScanResult_TreeView_button_release_event_cb(self, widget, event, data=None):
         if event.button == 3: # right click
             (model, pathlist) = self.scanresult_tv.get_selection().get_selected_rows()
-            if model.get_iter(pathlist[0]) is not None:
+            if pathlist is not []:
                 self.scanresult_popup.popup(None, None, None, None, event.button, event.get_time())
                 return True
             return False
@@ -386,7 +387,7 @@ class GameConqueror():
 
     def ScanResult_TreeView_popup_menu_cb(self, widget, data=None):
         (model, pathlist) = self.scanresult_tv.get_selection().get_selected_rows()
-        if model.get_iter(pathlist[0]) is not None:
+        if pathlist is not []:
             self.scanresult_popup.popup(None, None, None, None, 0, 0)
             return True
         return False
@@ -394,7 +395,7 @@ class GameConqueror():
     def CheatList_TreeView_button_release_event_cb(self, widget, event, data=None):
         if event.button == 3: # right click
             (model, pathlist) = self.cheatlist_tv.get_selection().get_selected_rows()
-            if model.get_iter(pathlist[0]) is not None:
+            if pathlist is not []:
                 self.cheatlist_popup.popup(None, None, None, None, event.button, event.get_time())
                 return True
             return False
@@ -402,7 +403,7 @@ class GameConqueror():
 
     def CheatList_TreeView_popup_menu_cb(self, widget, data=None):
         (model, pathlist) = self.cheatlist_tv.get_selection().get_selected_rows()
-        if model.get_iter(pathlist[0]) is not None:
+        if pathlist is not []:
             self.cheatlist_popup.popup(None, None, None, None, 0, 0)
             return True
         return False
@@ -499,19 +500,18 @@ class GameConqueror():
 
     def scanresult_popup_cb(self, menuitem, data=None):
         (model, pathlist) = self.scanresult_tv.get_selection().get_selected_rows()
-        theiter = model.get_iter(pathlist[0])
-        (addr, value, typestr) = model.get(theiter, 0, 1, 2)
-        if theiter is None:
+        if pathlist is []:
             return False
         if data == 'add_to_cheat_list':
             for i in pathlist:
                 (addr, value, typestr) = model.get(model.get_iter(i), 0, 1, 2)
                 self.add_to_cheat_list(addr, value, typestr)
             return True
-        elif data == 'browse_this_address':
+        addr = model.get(model.get_iter(pathlist[0]), 0)[0]
+        if data == 'browse_this_address':
             self.browse_memory(int(addr,16))
             return True
-        elif data == 'scan_for_this_address':
+        if data == 'scan_for_this_address':
             self.scan_for_addr(int(addr,16))
             return True
         return False
@@ -543,9 +543,7 @@ class GameConqueror():
     def cheatlist_popup_cb(self, menuitem, data=None):
         self.cheatlist_editing = False
         (model, pathlist) = self.cheatlist_tv.get_selection().get_selected_rows()
-        theiter = model.get_iter(pathlist[0])
-        addr = model.get(theiter, 3)[0]
-        if theiter is None:
+        if pathlist is []:
             return False
         if data == 'remove_entry':
             for i in reversed(pathlist):
@@ -553,10 +551,11 @@ class GameConqueror():
                 (addr, value, typestr) = model.get(theiter, 0, 1, 2)
                 self.cheatlist_liststore.remove(theiter)
             return True
-        elif data == 'browse_this_address':
+        addr = model.get(model.get_iter(pathlist[0]), 3)[0]
+        if data == 'browse_this_address':
             self.browse_memory(int(addr,16))
             return True
-        elif data == 'copy_address':
+        if data == 'copy_address':
             CLIPBOARD.set_text(addr, len(addr))
             return True
         return False
@@ -612,10 +611,17 @@ class GameConqueror():
     def cheatlist_edit_type_cb(self, cell, path, new_text, data=None):
         self.cheatlist_editing = False
         row = int(path)
+        if self.cheatlist_liststore[row][4] == new_text:
+            return True
         if new_text == 'bytearray':
-            self.cheatlist_liststore[row][5] = self.bytes2value(new_text, self.cheatlist_liststore[row][5].encode())
+            b = self.cheatlist_liststore[row][5].strip().encode()
+            self.cheatlist_liststore[row][5] = self.bytes2value(new_text, b)
         elif self.cheatlist_liststore[row][4] == 'bytearray':
-            self.cheatlist_liststore[row][5] = ''.join([chr(max(int(i,16),32)) for i in self.cheatlist_liststore[row][5].split()])
+            i = 0
+            for j in self.cheatlist_liststore[row][5].split():
+                i = i * 256 + int(j, 16)
+            b = i.to_bytes(math.ceil(math.log2(i)/8),'big')
+            self.cheatlist_liststore[row][5] = self.bytes2value('string', b)
         self.cheatlist_liststore[row][4] = new_text
         if self.cheatlist_liststore[row][1]: # locked
             # false unlock it
@@ -674,7 +680,13 @@ class GameConqueror():
         if typename in TYPENAMES_G2STRUCT:
             return struct.unpack(TYPENAMES_G2STRUCT[typename], thebytes)[0]
         elif typename == 'string':
-            return ''.join([chr(max(i,32)) for i in thebytes])
+            result = len(thebytes) * ' '
+            try:
+                result = thebytes.decode()
+                result += (len(thebytes) - len(result)) * ' '
+            except:
+                pass
+            return result
         elif typename == 'bytearray':
             return ' '.join(['%02x'%i for i in thebytes])
         else:
@@ -995,7 +1007,7 @@ class GameConqueror():
             addr = '%x'%(addr,)
 
         self.command_lock.acquire()
-        self.backend.send_command('write %s %s %s'%(typestr, addr, value))
+        self.backend.send_command('write %s %s %s'%(typestr, addr, value.strip()))
         self.command_lock.release()
 
     def exit(self, object, data=None):

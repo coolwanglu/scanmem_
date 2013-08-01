@@ -911,11 +911,12 @@ class GameConqueror():
         (x2,y2) = treeview.convert_tree_to_widget_coords(rect.x+rect.width,rect.y+rect.height)
         tup = treeview.get_path_at_pos(x1, y1)
         if tup is None:
-            return None
-        r1 = tup[0][0]
+            r1 = 1
+        else:
+            r1 = tup[0][0]
         tup = treeview.get_path_at_pos(x2, y2)
         if tup is None:
-            r2 = len(treeview.get_model()) - 1
+            r2 = len(treeview.get_model())
         else:
             r2 = tup[0][0]
         return (r1, r2)

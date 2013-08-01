@@ -20,19 +20,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-
 import sys
 import os
-import re
 import struct
 import tempfile
 import platform
 import threading
-import time
 import json
-import math
 
-import gi
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import GObject
@@ -614,14 +609,12 @@ class GameConqueror():
         if self.cheatlist_liststore[row][4] == new_text:
             return True
         if new_text == 'bytearray':
-            b = self.cheatlist_liststore[row][5].strip().encode()
+            b = self.cheatlist_liststore[row][5].encode()
             self.cheatlist_liststore[row][5] = self.bytes2value(new_text, b)
         elif self.cheatlist_liststore[row][4] == 'bytearray':
-            i = 0
-            for j in self.cheatlist_liststore[row][5].split():
-                i = i * 256 + int(j, 16)
-            b = i.to_bytes(math.ceil(math.log2(i)/8),'big')
-            self.cheatlist_liststore[row][5] = self.bytes2value('string', b)
+            a = self.cheatlist_liststore[row][5].split()
+            b = ''.join([chr(int(i,16)) for i in a]).encode('latin-1')
+            self.cheatlist_liststore[row][5] = b.decode('utf-8', 'replace')
         self.cheatlist_liststore[row][4] = new_text
         if self.cheatlist_liststore[row][1]: # locked
             # false unlock it
@@ -670,7 +663,7 @@ class GameConqueror():
         elif typename == 'bytearray':
             return (len(value.strip())+1)//3
         elif typename == 'string':
-            return len(value)
+            return len(value.encode())
         return None
 
     # parse bytes dumped by scanmem into number, string, etc.
@@ -680,13 +673,7 @@ class GameConqueror():
         if typename in TYPENAMES_G2STRUCT:
             return struct.unpack(TYPENAMES_G2STRUCT[typename], thebytes)[0]
         elif typename == 'string':
-            result = len(thebytes) * ' '
-            try:
-                result = thebytes.decode()
-                result += (len(thebytes) - len(result)) * ' '
-            except:
-                pass
-            return result
+            return thebytes.decode('utf-8', 'replace')
         elif typename == 'bytearray':
             return ' '.join(['%02x'%i for i in thebytes])
         else:
@@ -942,7 +929,7 @@ class GameConqueror():
             rows = self.get_visible_rows(self.scanresult_tv)
             if rows is not None:
                 (r1, r2) = rows # [r1, r2] rows are visible
-                for i in range(r1, r2+1):
+                for i in range(r1-1, r2):
                     row = self.scanresult_liststore[i]
                     addr, cur_value, scanmem_type, valid = row
                     if valid:
@@ -1007,7 +994,7 @@ class GameConqueror():
             addr = '%x'%(addr,)
 
         self.command_lock.acquire()
-        self.backend.send_command('write %s %s %s'%(typestr, addr, value.strip()))
+        self.backend.send_command('write %s %s %s'%(typestr, addr, value))
         self.command_lock.release()
 
     def exit(self, object, data=None):

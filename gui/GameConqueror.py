@@ -594,15 +594,15 @@ class GameConqueror():
         if not valid: #not valid
             return True
         if not typestr in ['bytearray', 'string']:
-            new_text =  str(misc.eval_operand(new_text))
-        self.cheatlist_liststore[row][5] = value = new_text
-        if self.cheatlist_liststore[row][1]: # locked
+            new_text = str(misc.eval_operand(new_text))
+        self.cheatlist_liststore[row][5] = new_text
+        if locked:
             # data_worker will handle this
             pass
         else:
             # write it for once
             self.cheatlist_updates.append(row)
-            self.write_value(addr, typestr, value)
+            self.write_value(addr, typestr, new_text)
         return True
 
     def cheatlist_edit_type_cb(self, cell, path, new_text, data=None):
@@ -619,7 +619,7 @@ class GameConqueror():
             value = self.bytes2value(new_text, b)
         elif typestr == 'bytearray':
             a = value.split()
-            b = ''.join([chr(int(i,16)) for i in a]).encode('latin-1')
+            b = bytearray(int(i,16) for i in a)
             value = b.decode('utf-8', 'replace')
         self.cheatlist_liststore[row][5] = value
         self.cheatlist_liststore[row][4] = new_text

@@ -910,22 +910,18 @@ class GameConqueror():
                 self.scanresult_liststore.append([a, v, t, True])
             self.scanresult_tv.set_model(self.scanresult_liststore)
 
-    # return (r1, r2) where all rows between r1 and r2 (INCLUSIVE) are visible
+    # return (r1, r2) where all rows between r1 and r2 (EXCLUSIVE) are visible
     # return None if no row visible
     def get_visible_rows(self, treeview):
-        rect = treeview.get_visible_rect()
-        x1,y1 = treeview.convert_tree_to_widget_coords(rect.x,rect.y)
-        x2,y2 = treeview.convert_tree_to_widget_coords(rect.x+rect.width,rect.y+rect.height)
-        tup = treeview.get_path_at_pos(x1, y1)
+        therange = treeview.get_visible_range()
         try:
-            r1 = tup[0][0]
+            r1 = therange[0][0]
         except:
-            r1 = 1
-        tup = treeview.get_path_at_pos(x2, y2)
+            r1 = 0
         try:
-            r2 = tup[0][0]
+            r2 = therange[1][0] + 1
         except:
-            r2 = min(10 + r1, len(treeview.get_model()))
+            r2 = min(11 + r1, len(treeview.get_model()))
         return (r1, r2)
 
     # read/write data periodically
@@ -935,7 +931,7 @@ class GameConqueror():
 
             self.is_data_worker_working = True
             r1, r2 = self.get_visible_rows(self.scanresult_tv)# [r1, r2] rows are visible
-            for i in range(r1-1, r2):
+            for i in range(r1, r2):
                 row = self.scanresult_liststore[i]
                 addr, cur_value, scanmem_type, valid = row
                 if valid:

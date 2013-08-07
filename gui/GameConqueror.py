@@ -911,7 +911,7 @@ class GameConqueror():
             self.scanresult_tv.set_model(self.scanresult_liststore)
 
     # return (r1, r2) where all rows between r1 and r2 (EXCLUSIVE) are visible
-    # return None if no row visible
+    # return (0, 0) if no row visible
     def get_visible_rows(self, treeview):
         therange = treeview.get_visible_range()
         try:
@@ -921,7 +921,7 @@ class GameConqueror():
         try:
             r2 = therange[1][0] + 1
         except:
-            r2 = min(11 + r1, len(treeview.get_model()))
+            r2 = min(20 + r1, len(treeview.get_model()))
         return (r1, r2)
 
     # read/write data periodically

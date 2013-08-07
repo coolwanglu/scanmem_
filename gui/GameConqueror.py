@@ -281,6 +281,7 @@ class GameConqueror():
         self.search_count = 0
         GObject.timeout_add(DATA_WORKER_INTERVAL, self.data_worker)
         self.command_lock = threading.RLock()
+        self.pathlist = []
 
 
     ###########################
@@ -402,6 +403,11 @@ class GameConqueror():
             self.cheatlist_popup.popup(None, None, None, None, 0, 0)
             return True
         return False
+
+    def CheatList_TreeView_select_cursor_row_cb(self, treeview, start_editing, data=None):
+        model, pathlist = self.cheatlist_tv.get_selection().get_selected_rows()
+        self.pathlist = pathlist
+        return True
 
     def ProcessFilter_Input_changed_cb(self, widget, data=None):
         self.processlist_filter.refilter()
@@ -556,17 +562,21 @@ class GameConqueror():
         return False
 
     def cheatlist_toggle_lock_cb(self, cellrenderertoggle, path, data=None):
-        row = int(path)
-        if self.cheatlist_liststore[row][6]: # valid
-            locked = self.cheatlist_liststore[row][1]
-            locked = not locked
-            self.cheatlist_liststore[row][1] = locked
-        if locked:
-            #TODO: check value(valid number & not overflow), if failed, unlock it and do nothing
-            pass
-        else:
-            #TODO: update its value?
-            pass
+        if self.pathlist == []:
+            self.pathlist.append([int(path)])
+        for path in self.pathlist:
+            row = path[0]
+            if self.cheatlist_liststore[row][6]: # valid
+                locked = self.cheatlist_liststore[row][1]
+                locked = not locked
+                self.cheatlist_liststore[row][1] = locked
+            if locked:
+                #TODO: check value(valid number & not overflow), if failed, unlock it and do nothing
+                pass
+            else:
+                #TODO: update its value?
+                pass
+        self.pathlist = []
         return True
 
     def cheatlist_toggle_lock_flag_cb(self, cell, path, new_text, data=None):
@@ -589,20 +599,24 @@ class GameConqueror():
         # ignore empty value
         if new_text == '':
             return True
-        row = int(path)
-        lockflag, locked, desc, addr, typestr, value, valid = self.cheatlist_liststore[row]
-        if not valid: #not valid
-            return True
-        if not typestr in ['bytearray', 'string']:
-            new_text = str(misc.eval_operand(new_text))
-        self.cheatlist_liststore[row][5] = new_text
-        if locked:
-            # data_worker will handle this
-            pass
-        else:
-            # write it for once
-            self.cheatlist_updates.append(row)
-            self.write_value(addr, typestr, new_text)
+        if self.pathlist == []:
+            self.pathlist.append([int(path)])
+        for path in self.pathlist:
+            row = path[0]
+            lockflag, locked, desc, addr, typestr, value, valid = self.cheatlist_liststore[row]
+            if not valid: #not valid
+                continue
+            if not typestr in ['bytearray', 'string']:
+                new_text = str(misc.eval_operand(new_text))
+            self.cheatlist_liststore[row][5] = new_text
+            if locked:
+                # data_worker will handle this
+                pass
+            else:
+                # write it for once
+                self.cheatlist_updates.append(row)
+                self.write_value(addr, typestr, new_text)
+        self.pathlist = []
         return True
 
     def cheatlist_edit_type_cb(self, cell, path, new_text, data=None):

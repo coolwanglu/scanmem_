@@ -590,8 +590,12 @@ class GameConqueror():
 
     def cheatlist_edit_description_cb(self, cell, path, new_text, data=None):
         self.cheatlist_editing = False
-        row = int(path)
-        self.cheatlist_liststore[row][2] = new_text
+        if self.pathlist == []:
+            self.pathlist.append([int(path)])
+        for path in self.pathlist:
+            row = path[0]
+            self.cheatlist_liststore[row][2] = new_text
+        self.pathlist = []
         return True
 
     def cheatlist_edit_value_cb(self, cell, path, new_text, data=None):
@@ -621,26 +625,30 @@ class GameConqueror():
 
     def cheatlist_edit_type_cb(self, cell, path, new_text, data=None):
         self.cheatlist_editing = False
-        row = int(path)
-        typestr, value = self.cheatlist_liststore[row][4:6]
-        if typestr == new_text:
-            return True
-        if new_text == 'bytearray':
-            if typestr == 'string':
-                b = value.encode()
-            else:
-                b = struct.pack(TYPENAMES_G2STRUCT[typestr], misc.eval_operand(value))
-            value = self.bytes2value(new_text, b)
-        elif typestr == 'bytearray':
-            a = value.split()
-            b = bytearray(int(i,16) for i in a)
-            value = b.decode('utf-8', 'replace')
-        self.cheatlist_liststore[row][5] = value
-        self.cheatlist_liststore[row][4] = new_text
-        if self.cheatlist_liststore[row][1]: # locked
-            # false unlock it
-            self.cheatlist_liststore[row][1] = False
-            pass
+        if self.pathlist == []:
+            self.pathlist.append([int(path)])
+        for path in self.pathlist:
+            row = path[0]
+            typestr, value = self.cheatlist_liststore[row][4:6]
+            if typestr == new_text:
+                continue
+            if new_text == 'bytearray':
+                if typestr == 'string':
+                    b = value.encode()
+                else:
+                    b = struct.pack(TYPENAMES_G2STRUCT[typestr], misc.eval_operand(value))
+                value = self.bytes2value(new_text, b)
+            elif typestr == 'bytearray':
+                a = value.split()
+                b = bytearray(int(i,16) for i in a)
+                value = b.decode('utf-8', 'replace')
+            self.cheatlist_liststore[row][5] = value
+            self.cheatlist_liststore[row][4] = new_text
+            if self.cheatlist_liststore[row][1]: # locked
+                # false unlock it
+                self.cheatlist_liststore[row][1] = False
+                pass
+        self.pathlist = []
         return True
 
     def processlist_filter_func(self, model, theiter, data=None):

@@ -405,8 +405,7 @@ class GameConqueror():
         return False
 
     def CheatList_TreeView_select_cursor_row_cb(self, treeview, start_editing, data=None):
-        model, pathlist = self.cheatlist_tv.get_selection().get_selected_rows()
-        self.pathlist = pathlist
+        self.pathlist = self.cheatlist_tv.get_selection().get_selected_rows()[1]
         return True
 
     def ProcessFilter_Input_changed_cb(self, widget, data=None):
@@ -608,7 +607,7 @@ class GameConqueror():
         for path in self.pathlist:
             row = path[0]
             lockflag, locked, desc, addr, typestr, value, valid = self.cheatlist_liststore[row]
-            if not valid: #not valid
+            if not valid:
                 continue
             if not typestr in ['bytearray', 'string']:
                 new_text = str(misc.eval_operand(new_text))

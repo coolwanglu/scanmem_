@@ -627,10 +627,7 @@ class GameConqueror():
                 value = b.decode('utf-8', 'replace')
             self.cheatlist_liststore[row][5] = value
             self.cheatlist_liststore[row][4] = new_text
-            if self.cheatlist_liststore[row][1]: # locked
-                # false unlock it
-                self.cheatlist_liststore[row][1] = False
-                pass
+            self.cheatlist_liststore[row][1] = False # unlock
         return True
 
     def processlist_filter_func(self, model, theiter, data=None):

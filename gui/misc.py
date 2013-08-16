@@ -68,7 +68,8 @@ def check_scan_command (data_type, cmd, is_first_scan):
         else:
             num = cmd
             cmd = ''
-        cmd += str(eval_operand(num)).replace('.', ',')
+        num = eval_operand(num)
+        cmd += str(num).replace('.', ',')
 
         if data_type.startswith('int'):
             if not (isinstance(num, int) or isinstance(num, long)):

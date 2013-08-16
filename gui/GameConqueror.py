@@ -22,7 +22,7 @@
 
 import sys
 import os
-import struct
+from struct import Struct
 import tempfile
 import platform
 import threading
@@ -69,13 +69,13 @@ TYPENAMES_S2G = {'I64':'int64'
                 ,'string':'string'
                 }   
 
-# convert our typenames into struct format characters
-TYPENAMES_G2STRUCT = {'int8':'b'
-                     ,'int16':'h'
-                     ,'int32':'i'
-                     ,'int64':'q'
-                     ,'float32':'f'
-                     ,'float64':'d'
+# convert our typenames into struct objects
+TYPENAMES_G2STRUCT = {'int8':Struct('b')
+                     ,'int16':Struct('h')
+                     ,'int32':Struct('i')
+                     ,'int64':Struct('q')
+                     ,'float32':Struct('f')
+                     ,'float64':Struct('d')
                      }
         
 # sizes in bytes of integer and float types
@@ -619,7 +619,7 @@ class GameConqueror():
                 if typestr == 'string':
                     b = value.encode()
                 else:
-                    b = struct.pack(TYPENAMES_G2STRUCT[typestr], misc.eval_operand(value))
+                    b = TYPENAMES_G2STRUCT[typestr].pack(misc.eval_operand(value))
                 value = self.bytes2value(new_text, b)
             elif typestr == 'bytearray':
                 a = value.split()
@@ -679,7 +679,7 @@ class GameConqueror():
         if thebytes is None:
             return None
         if typename in TYPENAMES_G2STRUCT:
-            return struct.unpack(TYPENAMES_G2STRUCT[typename], thebytes)[0]
+            return TYPENAMES_G2STRUCT[typename].unpack(thebytes)[0]
         elif typename == 'string':
             return thebytes.decode('utf-8', 'replace')
         elif typename == 'bytearray':

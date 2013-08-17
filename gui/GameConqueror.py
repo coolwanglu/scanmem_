@@ -19,10 +19,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-
 import sys
 import os
-import re
 import struct
 import tempfile
 import platform
@@ -30,7 +28,6 @@ import threading
 import time
 import json
 
-import gi
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import GObject

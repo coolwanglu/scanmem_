@@ -18,6 +18,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import locale
 from gi.repository import Gtk
 
 # check syntax, data range etc.
@@ -69,7 +70,7 @@ def check_scan_command (data_type, cmd, is_first_scan):
             num = cmd
             cmd = ''
         num = eval_operand(num)
-        cmd += str(num)
+        cmd += locale.format_string('%f', num)
 
         if data_type.startswith('int'):
             if not isinstance(num, int):

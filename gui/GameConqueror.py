@@ -19,8 +19,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-import locale
-locale.setlocale(locale.LC_ALL, '')
+
 import sys
 import os
 from struct import Struct

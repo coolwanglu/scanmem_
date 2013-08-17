@@ -33,8 +33,8 @@ def check_scan_command (data_type, cmd, is_first_scan):
         return '" ' + cmd
     elif data_type == 'bytearray':
         cmd = cmd.strip() 
-        thebytes = cmd.split(' ')
-        for byte in thebytes:
+        _bytes = cmd.split(' ')
+        for byte in _bytes:
             if byte.strip() == '':
                 continue
             if len(byte) != 2:

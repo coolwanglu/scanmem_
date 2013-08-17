@@ -69,7 +69,7 @@ def check_scan_command (data_type, cmd, is_first_scan):
             num = cmd
             cmd = ''
         num = eval_operand(num)
-        cmd += str(num).replace('.', ',')
+        cmd += str(num)
 
         if data_type.startswith('int'):
             if not isinstance(num, int):

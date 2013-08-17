@@ -19,7 +19,8 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
-
+import locale
+locale.setlocale(locale.LC_ALL, '')
 import sys
 import os
 from struct import Struct
@@ -496,17 +497,18 @@ class GameConqueror():
     def scanresult_popup_cb(self, menuitem, data=None):
         model, pathlist = self.scanresult_tv.get_selection().get_selected_rows()
         if data == 'add_to_cheat_list':
-            for i in pathlist:
-                addr, value, typestr = model.get(model.get_iter(i), 0, 1, 2)
+            for path in pathlist:
+                addr, value, typestr = model.get(model.get_iter(path), 0, 1, 2)
                 self.add_to_cheat_list(addr, value, typestr)
             return True
-        addr = model.get(model.get_iter(pathlist[0]), 0)[0]
-        if data == 'browse_this_address':
-            self.browse_memory(int(addr,16))
-            return True
-        if data == 'scan_for_this_address':
-            self.scan_for_addr(int(addr,16))
-            return True
+        for path in reversed(pathlist):
+            addr = model.get(model.get_iter(path), 0)[0]
+            if data == 'browse_this_address':
+                self.browse_memory(int(addr,16))
+                return True
+            if data == 'scan_for_this_address':
+                self.scan_for_addr(int(addr,16))
+                return True
         return False
 
     def scanresult_keypressed(self, scanresult_tv, event, selection=None):
@@ -514,15 +516,15 @@ class GameConqueror():
         pressedkey = Gdk.keyval_name(keycode)
         if pressedkey in ['KP_Enter','Return','space']:
             model, pathlist = self.scanresult_tv.get_selection().get_selected_rows()
-            for i in pathlist:
-                addr, value, typestr = model.get(model.get_iter(i), 0, 1, 2)
+            for path in pathlist:
+                addr, value, typestr = model.get(model.get_iter(path), 0, 1, 2)
                 self.add_to_cheat_list(addr, value, typestr)
 
     def scanresult_buttonpressed(self, scanresult_tv, event, selection=None):
         if event.get_click_count()[1] > 1:
             model, pathlist = self.scanresult_tv.get_selection().get_selected_rows()
-            for i in pathlist:
-                addr, value, typestr = model.get(model.get_iter(i), 0, 1, 2)
+            for path in pathlist:
+                addr, value, typestr = model.get(model.get_iter(path), 0, 1, 2)
                 self.add_to_cheat_list(addr, value, typestr)
 
     def cheatlist_keypressed(self, cheatlist_tv, event, selection=None):
@@ -530,25 +532,26 @@ class GameConqueror():
         pressedkey = Gdk.keyval_name(keycode)
         if pressedkey == 'Delete':
             model, pathlist = self.cheatlist_tv.get_selection().get_selected_rows()
-            for i in reversed(pathlist):
-                self.cheatlist_liststore.remove(model.get_iter(i))
+            for path in reversed(pathlist):
+                self.cheatlist_liststore.remove(model.get_iter(path))
 
     def cheatlist_popup_cb(self, menuitem, data=None):
         self.cheatlist_editing = False
         model, pathlist = self.cheatlist_tv.get_selection().get_selected_rows()
         if data == 'remove_entry':
-            for i in reversed(pathlist):
-                theiter = model.get_iter(i)
+            for path in reversed(pathlist):
+                theiter = model.get_iter(path)
                 addr, value, typestr = model.get(theiter, 0, 1, 2)
                 self.cheatlist_liststore.remove(theiter)
             return True
-        addr = model.get(model.get_iter(pathlist[0]), 3)[0]
-        if data == 'browse_this_address':
-            self.browse_memory(int(addr,16))
-            return True
-        if data == 'copy_address':
-            CLIPBOARD.set_text(addr, len(addr))
-            return True
+        for path in reversed(pathlist):
+            addr = model.get(model.get_iter(path), 3)[0]
+            if data == 'browse_this_address':
+                self.browse_memory(int(addr,16))
+                return True
+            if data == 'copy_address':
+                CLIPBOARD.set_text(addr, len(addr))
+                return True
         return False
 
     def cheatlist_toggle_lock_cb(self, cellrenderertoggle, path, data=None):

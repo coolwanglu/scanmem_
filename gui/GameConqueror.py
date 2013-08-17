@@ -410,9 +410,9 @@ class GameConqueror():
         self.processlist_filter.refilter()
 
     def ProcessList_TreeView_row_activated_cb(self, treeview, path, view_column, data=None):
-        model, theiter = self.processlist_tv.get_selection().get_selected()
-        if theiter is not None:
-            pid, user, process = model.get(theiter, 0, 1, 2)
+        model, _iter = self.processlist_tv.get_selection().get_selected()
+        if _iter is not None:
+            pid, user, process = model.get(_iter, 0, 1, 2)
             self.select_process(int(pid), process)
             self.process_list_dialog.response(Gtk.ResponseType.CANCEL)
             return True
@@ -428,12 +428,12 @@ class GameConqueror():
         while True:
             res = self.process_list_dialog.run()
             if res == Gtk.ResponseType.OK: # -5
-                model, theiter = self.processlist_tv.get_selection().get_selected()
-                if theiter is None:
+                model, _iter = self.processlist_tv.get_selection().get_selected()
+                if _iter is None:
                     self.show_error('Please select a process')
                     continue
                 else:
-                    pid, process = model.get(theiter, 0, 1)
+                    pid, process = model.get(_iter, 0, 1)
                     self.select_process(int(pid), process)
                     break
             else: # for None and Cancel
@@ -539,9 +539,7 @@ class GameConqueror():
         model, pathlist = self.cheatlist_tv.get_selection().get_selected_rows()
         if data == 'remove_entry':
             for path in reversed(pathlist):
-                theiter = model.get_iter(path)
-                addr, value, typestr = model.get(theiter, 0, 1, 2)
-                self.cheatlist_liststore.remove(theiter)
+                self.cheatlist_liststore.remove(model.get_iter(path))
             return True
         for path in reversed(pathlist):
             addr = model.get(model.get_iter(path), 3)[0]
@@ -632,8 +630,8 @@ class GameConqueror():
             self.cheatlist_liststore[row][1] = False # unlock
         return True
 
-    def processlist_filter_func(self, model, theiter, data=None):
-        pid, user, process = model.get(theiter, 0, 1, 2)
+    def processlist_filter_func(self, model, _iter, data=None):
+        pid, user, process = model.get(_iter, 0, 1, 2)
         return process is not None and \
                 process.find(self.processfilter_input.get_text()) != -1 and \
                 user is not None and \

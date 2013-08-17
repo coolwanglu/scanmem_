@@ -675,17 +675,17 @@ class GameConqueror():
         return None
 
     # parse bytes dumped by scanmem into number, string, etc.
-    def bytes2value(self, typename, thebytes):
-        if thebytes is None:
+    def bytes2value(self, typename, _bytes):
+        if _bytes is None:
             return None
         if typename in TYPENAMES_G2STRUCT:
-            return TYPENAMES_G2STRUCT[typename].unpack(thebytes)[0]
+            return TYPENAMES_G2STRUCT[typename].unpack(_bytes)[0]
         elif typename == 'string':
-            return thebytes.decode('utf-8', 'replace')
+            return _bytes.decode('utf-8', 'replace')
         elif typename == 'bytearray':
-            return ' '.join(['%02x'%i for i in thebytes])
+            return ' '.join(['%02x'%i for i in _bytes])
         else:
-            return thebytes
+            return _bytes
     
     def scan_for_addr(self, addr):
         bits = self.get_pointer_width()
@@ -914,15 +914,16 @@ class GameConqueror():
     # return (r1, r2) where all rows between r1 and r2 (EXCLUSIVE) are visible
     # return (0, 0) if no row visible
     def get_visible_rows(self, treeview):
-        therange = treeview.get_visible_range()
+        _range = treeview.get_visible_range()
         try:
-            r1 = therange[0][0]
+            r1 = _range[0][0]
         except:
             r1 = 0
         try:
-            r2 = therange[1][0] + 1
+            r2 = _range[1][0] + 1
         except:
-            r2 = min(20 + r1, len(treeview.get_model()))
+            max_rows = 20
+            r2 = min(max_rows + r1, len(treeview.get_model()))
         return (r1, r2)
 
     # read/write data periodically

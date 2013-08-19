@@ -19,6 +19,7 @@
 """
 
 import locale
+locale.setlocale(locale.LC_NUMERIC,'C')
 from gi.repository import Gtk
 
 # check syntax, data range etc.
@@ -70,7 +71,7 @@ def check_scan_command (data_type, cmd, is_first_scan):
             num = cmd
             cmd = ''
         num = eval_operand(num)
-        cmd += locale.str(num)
+        cmd += str(num)
 
         if data_type.startswith('int'):
             if not (isinstance(num, int) or isinstance(num, long)):

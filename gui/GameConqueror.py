@@ -19,10 +19,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-
 import sys
 import os
-import re
 import struct
 import tempfile
 import platform
@@ -30,7 +28,6 @@ import threading
 import time
 import json
 
-import gi
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import GObject
@@ -877,10 +874,11 @@ class GameConqueror():
             # temporarily disable model for scanresult_liststore for the sake of performance
             self.scanresult_liststore.clear()
             for line in lines:
-                line = line[line.find(']')+1:]
-                (a, v, t) = list(map(str.strip, line.split(',')[:3]))
-                a = '%x'%(int(a,16),)
-                t = t[1:-1]
+                tmp1 = line.find(',')
+                tmp2 = line.rfind(',')
+                a = line[line.find('x')+1:tmp1]
+                v = line[tmp1+2:tmp2]
+                t = line[tmp2+3:-2].split()[-1]
                 self.scanresult_liststore.append([a, v, t, True])
             self.scanresult_tv.set_model(self.scanresult_liststore)
 
@@ -914,7 +912,7 @@ class GameConqueror():
                     row = self.scanresult_liststore[i]
                     addr, cur_value, scanmem_type, valid = row
                     if valid:
-                        new_value = self.read_value(addr, TYPENAMES_S2G[scanmem_type.strip()], cur_value)
+                        new_value = self.read_value(addr, TYPENAMES_S2G[scanmem_type], cur_value)
                         if new_value is not None:
                             row[1] = str(new_value)
                         else:

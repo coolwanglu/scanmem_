@@ -618,7 +618,7 @@ class GameConqueror():
             if locked:
                 # data_worker will handle this
                 pass
-            else:
+            elif row not in self.cheatlist_updates:
                 # write it for once
                 self.cheatlist_updates.append(row)
                 self.write_value(addr, typestr, new_text)

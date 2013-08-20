@@ -160,7 +160,6 @@ class GameConqueror():
         self.cheatlist_tv.get_selection().connect('changed', self.CheatList_TreeSelection_changed_cb)
         self.cheatlist_pl = []
         self.cheatlist_tv.set_reorderable(True)
-        self.cheatlist_updates = []
         self.cheatlist_editing = False
         self.cheatlist_tv.connect('key-press-event', self.cheatlist_keypressed)
         # Lock Flag
@@ -618,9 +617,7 @@ class GameConqueror():
             if locked:
                 # data_worker will handle this
                 pass
-            elif row not in self.cheatlist_updates:
-                # write it for once
-                self.cheatlist_updates.append(row)
+            else:
                 self.write_value(addr, typestr, new_text)
         return True
 
@@ -963,28 +960,22 @@ class GameConqueror():
                         row[3] = False
             # write locked values in cheat list and read unlocked values
             for i in self.cheatlist_liststore:
-                lockflag, locked, desc, addr, typestr, value, valid = i
-                if locked and valid:
-                    self.write_value(addr, typestr, value)
+                if i[1] and i[6]: # locked and valid
+                    self.write_value(i[3], i[4], i[5]) # addr, typestr, value
             rows = self.get_visible_rows(self.cheatlist_tv)
             for i in rows:
                 lockflag, locked, desc, addr, typestr, value, valid = self.cheatlist_liststore[i]
-                if not valid or locked:
-                    continue
-                elif i in self.cheatlist_updates:
-                    self.write_value(addr, typestr, value)
-                    self.cheatlist_updates.remove(i)
-                else:
+                if valid and not locked:
                     newvalue = self.read_value(addr, typestr, value)
                     if newvalue is None:
                         self.cheatlist_liststore[i] = (lockflag, False, desc, addr, typestr, '??', False)
                     elif newvalue != value and not locked and not self.cheatlist_editing:
                         self.cheatlist_liststore[i] = (lockflag, locked, desc, addr, typestr, str(newvalue), valid)
-            self.is_data_worker_working = False 
+            self.is_data_worker_working = False
 
             Gdk.flush()
             Gdk.threads_leave()
-            self.command_lock.release()           
+            self.command_lock.release()
         return not self.exit_flag
 
     def read_value(self, addr, typestr, prev_value):

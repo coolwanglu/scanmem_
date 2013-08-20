@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
     GameConquerorBackend: communication with scanmem
     
@@ -45,7 +45,7 @@ class GameConquerorBackend():
         self.version = ''
 
     def init_lib_functions(self):
-        for k,v in GameConquerorBackend.BACKEND_FUNCS.items():
+        for k,v in list(GameConquerorBackend.BACKEND_FUNCS.items()):
             f = getattr(self.lib, k)
             f.restype = v[0]
             f.argtypes = v[1:]
@@ -57,14 +57,14 @@ class GameConquerorBackend():
                 backup_stdout_fileno = os.dup(sys.stdout.fileno())
                 os.dup2(directed_file.fileno(), sys.stdout.fileno())
 
-                self.lib.backend_exec_cmd(ctypes.c_char_p(cmd))
+                self.lib.backend_exec_cmd(ctypes.c_char_p(cmd.encode()))
 
                 os.dup2(backup_stdout_fileno, sys.stdout.fileno())
                 os.close(backup_stdout_fileno)
                 directed_file.seek(0)
                 return directed_file.readlines()
         else:
-            self.lib.backend_exec_cmd(ctypes.c_char_p(cmd))
+            self.lib.backend_exec_cmd(ctypes.c_char_p(cmd.encode()))
 
     def get_match_count(self):
         return self.lib.get_num_matches()

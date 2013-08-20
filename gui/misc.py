@@ -18,6 +18,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import locale
+locale.setlocale(locale.LC_NUMERIC,'C')
 from gi.repository import Gtk
 
 # check syntax, data range etc.
@@ -32,8 +34,8 @@ def check_scan_command (data_type, cmd, is_first_scan):
         return '" ' + cmd
     elif data_type == 'bytearray':
         cmd = cmd.strip() 
-        bytes = cmd.split(' ')
-        for byte in bytes:
+        _bytes = cmd.split(' ')
+        for byte in _bytes:
             if byte.strip() == '':
                 continue
             if len(byte) != 2:
@@ -60,14 +62,19 @@ def check_scan_command (data_type, cmd, is_first_scan):
 
         # evaluating the command
         if cmd[:2] in ['+ ', '- ', '> ', '< ']:
-            num = eval_operand(cmd[2:])
-            cmd = cmd[:2] + str(num)
+            num = cmd[2:]
+            cmd = cmd[:2]
+        elif cmd[:3] ==  '!= ':
+            num = cmd[3:]
+            cmd = cmd[:3]
         else:
-            num = eval_operand(cmd)
-            cmd = str(num)
+            num = cmd
+            cmd = ''
+        num = eval_operand(num)
+        cmd += str(num)
 
         if data_type.startswith('int'):
-            if not (isinstance(num, int) or isinstance(num, long)):
+            if not isinstance(num, int):
                 raise ValueError('%s is not an integer' % (num,))
             if data_type == 'int':
                 width = 64
@@ -83,7 +90,7 @@ def check_scan_command (data_type, cmd, is_first_scan):
 def eval_operand(s):
     try:
         v = eval(s)
-        if isinstance(v, (int,long,float)):
+        if isinstance(v, (int,float)):
             return v
     except:
         pass

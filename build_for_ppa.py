@@ -28,17 +28,17 @@ dist_pattern=re.compile('|'.join(['\\) '+i for i in supported_distributions]))
 archive_cmd='./configure --enable-gui && make dist'
 archive_suffix='.tar.gz'
 
-print 'Generating version...'
+print('Generating version...')
 try:
     version = re.findall(r'AC_INIT\(\[[^]]+\],\s*\[([^]]+)\]', open('configure.ac').read())[0]
 except:
-    print 'Cannot get package name and version number'
+    print('Cannot get package name and version number')
     sys.exit(-1)
 
 try:
     rev = open('.git/refs/heads/master').read()[:5]
 except:
-    print 'Cannot get revision number'
+    print('Cannot get revision number')
     sys.exit(-1)
 
 projectdir=os.getcwd()
@@ -49,13 +49,13 @@ full_deb_version = deb_version+'-0ubuntu1'
 #check if we need to update debian/changelog
 with open('debian/changelog') as f:
     if re.findall(r'\(([^)]+)\)', f.readline())[0] == full_deb_version:
-        print
-        print 'No need to update debian/changelog, skipping'
+        print()
+        print('No need to update debian/changelog, skipping')
     else:
-        print
-        print 'Writing debian/changelog'
+        print()
+        print('Writing debian/changelog')
         if os.system('dch -v "%s"' % (full_deb_version,)) != 0:
-            print 'Failed when updating debian/changelog'
+            print('Failed when updating debian/changelog')
             sys.exit(-1)
 
 # changelog may have been updated, reopen it
@@ -64,19 +64,19 @@ with open('debian/changelog') as f:
     changelog = f.read()
     m = dist_pattern.search(changelog)
     if m is None or m.pos >= changelog.find('\n'):
-        print 'Cannot locate the dist name in the first line of changelog'
+        print('Cannot locate the dist name in the first line of changelog')
         sys.exit(-1)
 
-print
-print 'Preparing build ...'
+print()
+print('Preparing build ...')
 # handling files
 if os.system(archive_cmd) != 0:
-    print 'Failed in creating tarball'
+    print('Failed in creating tarball')
     sys.exit(-1)
 
 orig_tar_filename = package+'-'+version+archive_suffix
 if os.system('test -e %s && cp %s ../build-area/' % (orig_tar_filename, orig_tar_filename)) != 0:
-    print 'Cannot copy tarball file to build area'
+    print('Cannot copy tarball file to build area')
     sys.exit(-1)
 
 deb_orig_tar_filename = package+'_'+deb_version+'.orig'+archive_suffix
@@ -84,38 +84,38 @@ deb_orig_tar_filename = package+'_'+deb_version+'.orig'+archive_suffix
 try:
     os.chdir('../build-area')
 except:
-    print 'Cannot find ../build-area'
+    print('Cannot find ../build-area')
     sys.exit(-1)
 
 # remove old dir
 os.system('rm -rf %s' % (package+'-'+version,))
 
 if os.system('mv %s %s && tar -xvf %s' % (orig_tar_filename, deb_orig_tar_filename, deb_orig_tar_filename)) != 0:
-    print 'Cannot extract tarball'
+    print('Cannot extract tarball')
     sys.exit(-1)
 
 try:
     os.chdir(package+'-'+version)
 except:
-    print 'Cannot enter project dir'
+    print('Cannot enter project dir')
     sys.exit(-1)
 
 os.system('cp -r %s/debian .' % (projectdir,))
 
 for cur_dist in supported_distributions:
-    print
-    print 'Building for ' + cur_dist + ' ...'
+    print()
+    print('Building for ' + cur_dist + ' ...')
     # substitute distribution name 
     with open('debian/changelog', 'w') as f:
         f.write(dist_pattern.sub('~%s1) %s' % (cur_dist, cur_dist), changelog, 1))
 
     # building
     if os.system('debuild -S -sa') != 0:
-        print 'Failed in debuild'
+        print('Failed in debuild')
         sys.exit(-1)
 
     """
-    print
+    print()
     sys.stdout.write('Everything seems to be good so far, upload?(y/n)')
     sys.stdout.flush()
     ans = raw_input().lower()
@@ -124,17 +124,17 @@ for cur_dist in supported_distributions:
         ans = raw_input().lower()
 
     if ans == 'n':
-        print 'Skipped.'
+        print('Skipped.')
         sys.exit(0)
     """
 
-    print 'Uploading'   
+    print('Uploading')   
     if os.system('dput %s ../%s' % (ppa_name, package+'_'+full_deb_version+'~'+cur_dist+'1_source.changes')) != 0:
-        print 'Failed in uploading by dput'
+        print('Failed in uploading by dput')
         sys.exit(-1)
 
-print 'Build area not cleaned.'
-print 'All done. Cool!'
+print('Build area not cleaned.')
+print('All done. Cool!')
 
 
 

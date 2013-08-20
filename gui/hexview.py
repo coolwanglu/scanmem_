@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # HexView.py
 #
@@ -70,7 +70,7 @@ class OffsetText(BaseText):
         self.buffer.set_text('')
         base_addr = self._parent.base_addr
         bpl = self._parent.bpl
-        tot_lines = int(len(txt) / bpl)
+        tot_lines = len(txt) // bpl
 
         if len(txt) % bpl != 0:
             tot_lines += 1
@@ -93,7 +93,7 @@ class OffsetText(BaseText):
         font = ctx.load_font(Pango.FontDescription(self._parent.font))
         metric = font.get_metrics(ctx.get_language())
 
-        w = metric.get_approximate_char_width() / Pango.SCALE * (self.off_len + 1)
+        w = metric.get_approximate_char_width() // Pango.SCALE * (self.off_len + 1)
         w += 2
 
         return w,w 
@@ -172,7 +172,7 @@ class AsciiText(BaseText):
             else:
                 iter = buffer.get_iter_at_mark(buffer.get_insert())
                 off = iter.get_offset()
-                org_off = off - off / (self._parent.bpl + 1)
+                org_off = off - off // (self._parent.bpl + 1)
                 self._parent.emit('char-changed', org_off, c)
                 self.select_a_char(buffer.get_iter_at_offset(off+1))
             return True
@@ -210,7 +210,7 @@ class AsciiText(BaseText):
         self.buffer.set_text('')
 
         bpl = self._parent.bpl
-        tot_lines = len(txt) / bpl
+        tot_lines = len(txt) // bpl
 
         if len(txt) % bpl != 0:
             tot_lines += 1
@@ -218,7 +218,7 @@ class AsciiText(BaseText):
         output = []
 
         convert = lambda i: "".join(
-            [(x in AsciiText._printable) and (x) or ('.') for x in list(i)])
+            [(chr(x) in AsciiText._printable) and chr(x) or ('.') for x in list(i)])
 
         for i in range(tot_lines):
             if i * bpl + bpl > len(txt):
@@ -242,7 +242,7 @@ class AsciiText(BaseText):
         font = ctx.load_font(Pango.FontDescription(self._parent.font))
         metric = font.get_metrics(ctx.get_language())
 
-        w = metric.get_approximate_char_width() / Pango.SCALE * self._parent.bpl
+        w = metric.get_approximate_char_width() // Pango.SCALE * self._parent.bpl
         w += 2
 
         return w,w
@@ -268,8 +268,8 @@ class AsciiText(BaseText):
             return
 
         bpl = self._parent.bpl
-        start += start/bpl
-        end += end/bpl
+        start += start//bpl
+        end += end//bpl
 
         if self.prev_start and self.prev_end:
             if self.buffer.get_iter_at_mark(self.prev_start).get_offset() == start \
@@ -332,7 +332,7 @@ class HexText(BaseText):
                 iter = buffer.get_iter_at_mark(buffer.get_insert())
                 off = iter.get_offset()
                 pos = off % 3
-                org_off = off / 3
+                org_off = off // 3
                 txt = buffer.get_text(
                         buffer.get_iter_at_offset(org_off*3),
                         buffer.get_iter_at_offset(org_off*3+2),
@@ -422,13 +422,13 @@ class HexText(BaseText):
         self.buffer.set_text('')
 
         bpl = self._parent.bpl
-        tot_lines = int(len(txt) / bpl)
+        tot_lines = len(txt) // bpl
 
         if len(txt) % bpl != 0:
             tot_lines += 1
 
         output = []
-        convert = lambda x: '%02X'%(ord(x),)
+        convert = lambda x: '%02X'%x
 
         for i in range(tot_lines):
             if i * bpl + bpl > len(txt):
@@ -452,7 +452,7 @@ class HexText(BaseText):
         font = ctx.load_font(Pango.FontDescription(self._parent.font))
         metric = font.get_metrics(ctx.get_language())
 
-        w = metric.get_approximate_char_width() / Pango.SCALE * \
+        w = metric.get_approximate_char_width() // Pango.SCALE * \
                         (self._parent.bpl * 3 - 1)
         w += 2
         return w,w
@@ -594,7 +594,7 @@ class HexView(Gtk.Box):
         s_off = start.get_offset()
         e_off = end.get_offset()
 
-        self.ascii_text.select_blocks((s_off+1) / 3, (e_off-1) / 3+1)
+        self.ascii_text.select_blocks((s_off+1) // 3, (e_off-1) // 3+1)
         return True
 
     def __on_ascii_change(self, buffer, iter, mark):
@@ -609,8 +609,8 @@ class HexView(Gtk.Box):
         bpl = self._bpl
 
         self.hex_text.select_blocks(
-            start_off - start_off / (bpl + 1),
-            end_off - end_off / (bpl + 1)
+            start_off - start_off // (bpl + 1),
+            end_off - end_off // (bpl + 1)
         )
         return True
 
@@ -624,8 +624,8 @@ class HexView(Gtk.Box):
         hex_buffer.delete(iter1, iter2)
         hex_buffer.insert(iter1, '%02X'%(charval,))
         # set ascii
-        iter1 = ascii_buffer.get_iter_at_offset(offset + offset / self._bpl)
-        iter2 = ascii_buffer.get_iter_at_offset(offset + offset / self._bpl + 1)
+        iter1 = ascii_buffer.get_iter_at_offset(offset + offset // self._bpl)
+        iter2 = ascii_buffer.get_iter_at_offset(offset + offset // self._bpl + 1)
         ascii_buffer.delete(iter1, iter2)
         char = chr(charval)
         ascii_buffer.insert(iter1, (char in AsciiText._printable and char or '.'))

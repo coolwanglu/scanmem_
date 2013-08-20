@@ -1,9 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
     Game Conqueror: a graphical game cheating tool, using scanmem as its backend
     
     Copyright (C) 2009,2010,2011,2013 Wang Lu <coolwanglu(a)gmail.com>
     Copyright (C) 2010 Bryan Cain
+    Copyright (C) 2013 Mattias <mattiasmun(a)gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,18 +20,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-
 import sys
 import os
-import re
-import struct
+from struct import Struct
 import tempfile
 import platform
 import threading
-import time
 import json
 
-import gi
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import GObject
@@ -72,13 +69,13 @@ TYPENAMES_S2G = {'I64':'int64'
                 ,'string':'string'
                 }   
 
-# convert our typenames into struct format characters
-TYPENAMES_G2STRUCT = {'int8':'b'
-                     ,'int16':'h'
-                     ,'int32':'i'
-                     ,'int64':'q'
-                     ,'float32':'f'
-                     ,'float64':'d'
+# convert our typenames into struct objects
+TYPENAMES_G2STRUCT = {'int8':Struct('b')
+                     ,'int16':Struct('h')
+                     ,'int32':Struct('i')
+                     ,'int64':Struct('q')
+                     ,'float32':Struct('f')
+                     ,'float64':Struct('d')
                      }
         
 # sizes in bytes of integer and float types
@@ -124,7 +121,6 @@ class GameConqueror():
 
         self.scan_button = self.builder.get_object('Scan_Button')
         self.reset_button = self.builder.get_object('Reset_Button')
-        self.is_first_scan = True
 
         ###
         # Set scan data type
@@ -149,6 +145,9 @@ class GameConqueror():
         self.scanresult_tv = self.builder.get_object('ScanResult_TreeView')
         self.scanresult_liststore = Gtk.ListStore(str, str, str, bool) #addr, value, type, valid
         self.scanresult_tv.set_model(self.scanresult_liststore)
+        self.scanresult_tv.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
+        self.scanresult_tv.get_selection().connect('changed', self.ScanResult_TreeSelection_changed_cb)
+        self.scanresult_pl = []
         # init columns
         misc.treeview_append_column(self.scanresult_tv, 'Address', attributes=(('text',0),), properties = (('family', 'monospace'),))
         misc.treeview_append_column(self.scanresult_tv, 'Value', attributes=(('text',1),), properties = (('family', 'monospace'),))
@@ -157,8 +156,10 @@ class GameConqueror():
         self.cheatlist_tv = self.builder.get_object('CheatList_TreeView')
         self.cheatlist_liststore = Gtk.ListStore(str, bool, str, str, str, str, bool) #lockflag, locked, description, addr, type, value, valid
         self.cheatlist_tv.set_model(self.cheatlist_liststore)
+        self.cheatlist_tv.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
+        self.cheatlist_tv.get_selection().connect('changed', self.CheatList_TreeSelection_changed_cb)
+        self.cheatlist_pl = []
         self.cheatlist_tv.set_reorderable(True)
-        self.cheatlist_updates = []
         self.cheatlist_editing = False
         self.cheatlist_tv.connect('key-press-event', self.cheatlist_keypressed)
         # Lock Flag
@@ -338,7 +339,7 @@ class GameConqueror():
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
             try:
-                with open(dialog.get_filename(), 'rb') as f:
+                with open(dialog.get_filename()) as f:
                     obj = json.load(f)
                     for row in obj['cheat_list']:
                         self.add_to_cheat_list(row[3],row[5],row[4],row[2])
@@ -358,7 +359,7 @@ class GameConqueror():
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
             try:
-                with open(dialog.get_filename(), 'wb') as f:
+                with open(dialog.get_filename(), 'w') as f:
                     obj = {'cheat_list' : [list(i) for i in self.cheatlist_liststore]}
                     json.dump(obj, f);
             except:
@@ -375,42 +376,39 @@ class GameConqueror():
 
     def ScanResult_TreeView_button_release_event_cb(self, widget, event, data=None):
         if event.button == 3: # right click
-            (model, iter) = self.scanresult_tv.get_selection().get_selected()
-            if iter is not None:
+            model, pathlist = self.scanresult_tv.get_selection().get_selected_rows()
+            if pathlist is not []:
                 self.scanresult_popup.popup(None, None, None, None, event.button, event.get_time())
                 return True
             return False
         return False
 
     def ScanResult_TreeView_popup_menu_cb(self, widget, data=None):
-        (model, iter) = self.scanresult_tv.get_selection().get_selected()
-        if iter is not None:
-            self.scanresult_popup.popup(None, None, None, 0, 0)
+        model, pathlist = self.scanresult_tv.get_selection().get_selected_rows()
+        if pathlist is not []:
+            self.scanresult_popup.popup(None, None, None, None, 0, 0)
             return True
         return False
 
-    def ScanResult_TreeView_row_activated_cb(self, treeview, path, view_column, data=None):
-        # add to cheat list
-        (model, iter) = self.scanresult_tv.get_selection().get_selected()
-        if iter is not None:
-            (addr, value, typestr) = model.get(iter, 0, 1, 2)
-            self.add_to_cheat_list(addr, value, typestr)
-            return True
-        return False
+    def ScanResult_TreeSelection_changed_cb(self, treeselection, data=None):
+        self.selection_changed(treeselection, self.scanresult_pl)
+
+    def CheatList_TreeSelection_changed_cb(self, treeselection, data=None):
+        self.selection_changed(treeselection, self.cheatlist_pl)
 
     def CheatList_TreeView_button_release_event_cb(self, widget, event, data=None):
         if event.button == 3: # right click
-            (model, iter) = self.cheatlist_tv.get_selection().get_selected()
-            if iter is not None:
+            model, pathlist = self.cheatlist_tv.get_selection().get_selected_rows()
+            if pathlist is not []:
                 self.cheatlist_popup.popup(None, None, None, None, event.button, event.get_time())
                 return True
             return False
         return False
 
     def CheatList_TreeView_popup_menu_cb(self, widget, data=None):
-        (model, iter) = self.cheatlist_tv.get_selection().get_selected()
-        if iter is not None:
-            self.cheatlist_popup.popup(None, None, None, 0, 0)
+        model, pathlist = self.cheatlist_tv.get_selection().get_selected_rows()
+        if pathlist is not []:
+            self.cheatlist_popup.popup(None, None, None, None, 0, 0)
             return True
         return False
 
@@ -421,9 +419,9 @@ class GameConqueror():
         self.processlist_filter.refilter()
 
     def ProcessList_TreeView_row_activated_cb(self, treeview, path, view_column, data=None):
-        (model, iter) = self.processlist_tv.get_selection().get_selected()
-        if iter is not None:
-            (pid, user, process) = model.get(iter, 0, 1, 2)
+        model, _iter = self.processlist_tv.get_selection().get_selected()
+        if _iter is not None:
+            pid, user, process = model.get(_iter, 0, 1, 2)
             self.select_process(int(pid), process)
             self.process_list_dialog.response(Gtk.ResponseType.CANCEL)
             return True
@@ -439,12 +437,12 @@ class GameConqueror():
         while True:
             res = self.process_list_dialog.run()
             if res == Gtk.ResponseType.OK: # -5
-                (model, iter) = self.processlist_tv.get_selection().get_selected()
-                if iter is None:
+                model, _iter = self.processlist_tv.get_selection().get_selected()
+                if _iter is None:
                     self.show_error('Please select a process')
                     continue
                 else:
-                    (pid, process) = model.get(iter, 0, 1)
+                    pid, process = model.get(_iter, 0, 1)
                     self.select_process(int(pid), process)
                     break
             else: # for None and Cancel
@@ -498,65 +496,91 @@ class GameConqueror():
         # return False such that the byte the default handler will be called, and will be displayed correctly 
         return False
 
-    
+    def selection_changed(self, treeselection, pl):
+        pathlist = treeselection.get_selected_rows()[1]
+        for path in pl:
+            if not path in pathlist:
+                pl.remove(path)
+        for path in pathlist:
+            if not path in pl:
+                pl.append(path)
+                break
+
     def cheatlist_edit_start(self, a, b, c):
         self.cheatlist_editing = True
     def cheatlist_edit_cancel(self, a):
         self.cheatlist_editing = False
 
     def scanresult_popup_cb(self, menuitem, data=None):
-        (model, iter) = self.scanresult_tv.get_selection().get_selected()
-        (addr, value, typestr) = model.get(iter, 0, 1, 2)
-        if iter is None:
-            return False
+        model, pathlist = self.scanresult_tv.get_selection().get_selected_rows()
         if data == 'add_to_cheat_list':
-            self.add_to_cheat_list(addr, value, typestr)
+            for path in pathlist:
+                addr, value, typestr = model.get(model.get_iter(path), 0, 1, 2)
+                self.add_to_cheat_list(addr, value, typestr)
             return True
-        elif data == 'browse_this_address':
+        addr = model.get(model.get_iter(self.scanresult_pl[-1]), 0)[0]
+        if data == 'browse_this_address':
             self.browse_memory(int(addr,16))
             return True
-        elif data == 'scan_for_this_address':
+        if data == 'scan_for_this_address':
             self.scan_for_addr(int(addr,16))
             return True
         return False
-        
+
+    def scanresult_keypressed(self, scanresult_tv, event, selection=None):
+        keycode = event.keyval
+        pressedkey = Gdk.keyval_name(keycode)
+        if pressedkey in ['KP_Enter','Return','space']:
+            model, pathlist = self.scanresult_tv.get_selection().get_selected_rows()
+            for path in pathlist:
+                addr, value, typestr = model.get(model.get_iter(path), 0, 1, 2)
+                self.add_to_cheat_list(addr, value, typestr)
+
+    def scanresult_buttonpressed(self, scanresult_tv, event, selection=None):
+        if event.get_click_count()[1] > 1:
+            model, pathlist = self.scanresult_tv.get_selection().get_selected_rows()
+            for path in pathlist:
+                addr, value, typestr = model.get(model.get_iter(path), 0, 1, 2)
+                self.add_to_cheat_list(addr, value, typestr)
+
     def cheatlist_keypressed(self, cheatlist_tv, event, selection=None):
         keycode = event.keyval
         pressedkey = Gdk.keyval_name(keycode)
         if pressedkey == 'Delete':
-            (model, iter) = self.cheatlist_tv.get_selection().get_selected()
-            if iter is None: return
-            self.cheatlist_liststore.remove(iter) 
+            model, pathlist = self.cheatlist_tv.get_selection().get_selected_rows()
+            for path in reversed(pathlist):
+                self.cheatlist_liststore.remove(model.get_iter(path))
 
     def cheatlist_popup_cb(self, menuitem, data=None):
         self.cheatlist_editing = False
-        (model, iter) = self.cheatlist_tv.get_selection().get_selected()
-        addr = model.get(iter, 3)[0]
-        if iter is None:
-            return False
+        model, pathlist = self.cheatlist_tv.get_selection().get_selected_rows()
         if data == 'remove_entry':
-            self.cheatlist_liststore.remove(iter) 
+            for path in reversed(pathlist):
+                self.cheatlist_liststore.remove(model.get_iter(path))
             return True
-        elif data == 'browse_this_address':
+        addr = model.get(model.get_iter(self.cheatlist_pl[-1]), 3)[0]
+        if data == 'browse_this_address':
             self.browse_memory(int(addr,16))
             return True
-        elif data == 'copy_address':
+        if data == 'copy_address':
             CLIPBOARD.set_text(addr, len(addr))
             return True
         return False
 
     def cheatlist_toggle_lock_cb(self, cellrenderertoggle, path, data=None):
-        row = int(path)
-        if self.cheatlist_liststore[row][6]: # valid
-            locked = self.cheatlist_liststore[row][1]
-            locked = not locked
-            self.cheatlist_liststore[row][1] = locked
-        if locked:
-            #TODO: check value(valid number & not overflow), if failed, unlock it and do nothing
-            pass
-        else:
-            #TODO: update its value?
-            pass
+        pathlist = self.cheatlist_tv.get_selection().get_selected_rows()[1]
+        for path in pathlist:
+            row = path[0]
+            if self.cheatlist_liststore[row][6]: # valid
+                locked = self.cheatlist_liststore[row][1]
+                locked = not locked
+                self.cheatlist_liststore[row][1] = locked
+            if locked:
+                #TODO: check value(valid number & not overflow), if failed, unlock it and do nothing
+                pass
+            else:
+                #TODO: update its value?
+                pass
         return True
 
     def cheatlist_toggle_lock_flag_cb(self, cell, path, new_text, data=None):
@@ -570,8 +594,10 @@ class GameConqueror():
 
     def cheatlist_edit_description_cb(self, cell, path, new_text, data=None):
         self.cheatlist_editing = False
-        row = int(path)
-        self.cheatlist_liststore[row][2] = new_text
+        pathlist = self.cheatlist_tv.get_selection().get_selected_rows()[1]
+        for path in pathlist:
+            row = path[0]
+            self.cheatlist_liststore[row][2] = new_text
         return True
 
     def cheatlist_edit_value_cb(self, cell, path, new_text, data=None):
@@ -579,32 +605,46 @@ class GameConqueror():
         # ignore empty value
         if new_text == '':
             return True
-        row = int(path)
-        if not self.cheatlist_liststore[row][6]: #not valid
-            return True
-        self.cheatlist_liststore[row][5] = new_text
-        if self.cheatlist_liststore[row][1]: # locked
-            # data_worker will handle this
-            pass
-        else:
-            # write it for once
-            (lockflag, locked, desc, addr, typestr, value, valid) = self.cheatlist_liststore[row]
-            self.cheatlist_updates.append(row)
-            self.write_value(addr, typestr, value)
+        pathlist = self.cheatlist_tv.get_selection().get_selected_rows()[1]
+        for path in pathlist:
+            row = path[0]
+            lockflag, locked, desc, addr, typestr, value, valid = self.cheatlist_liststore[row]
+            if not valid:
+                continue
+            if not typestr in ['bytearray', 'string']:
+                new_text = str(misc.eval_operand(new_text))
+            self.cheatlist_liststore[row][5] = new_text
+            if locked:
+                # data_worker will handle this
+                pass
+            else:
+                self.write_value(addr, typestr, new_text)
         return True
 
     def cheatlist_edit_type_cb(self, cell, path, new_text, data=None):
         self.cheatlist_editing = False
-        row = int(path)
-        self.cheatlist_liststore[row][4] = new_text
-        if self.cheatlist_liststore[row][1]: # locked
-            # false unlock it
-            self.cheatlist_liststore[row][1] = False
-            pass
+        pathlist = self.cheatlist_tv.get_selection().get_selected_rows()[1]
+        for path in pathlist:
+            row = path[0]
+            typestr, value = self.cheatlist_liststore[row][4:6]
+            if typestr == new_text:
+                continue
+            if new_text == 'bytearray':
+                if typestr == 'string':
+                    b = value.encode()
+                else:
+                    b = TYPENAMES_G2STRUCT[typestr].pack(misc.eval_operand(value))
+                value = self.bytes2value(new_text, b)
+            elif typestr == 'bytearray':
+                b = bytearray(int(i,16) for i in value.split())
+                value = b.decode('utf-8', 'replace')
+            self.cheatlist_liststore[row][5] = value
+            self.cheatlist_liststore[row][4] = new_text
+            self.cheatlist_liststore[row][1] = False # unlock
         return True
 
-    def processlist_filter_func(self, model, iter, data=None):
-        (pid, user, process) = model.get(iter, 0, 1, 2)
+    def processlist_filter_func(self, model, _iter, data=None):
+        pid, user, process = model.get(_iter, 0, 1, 2)
         return process is not None and \
                 process.find(self.processfilter_input.get_text()) != -1 and \
                 user is not None and \
@@ -642,23 +682,23 @@ class GameConqueror():
         if typename in TYPESIZES: # int or float type; fixed length
             return TYPESIZES[typename]
         elif typename == 'bytearray':
-            return (len(value.strip())+1)/3
+            return (len(value.strip())+1)//3
         elif typename == 'string':
-            return len(eval('\''+value+'\''))
+            return len(value.encode())
         return None
 
     # parse bytes dumped by scanmem into number, string, etc.
-    def bytes2value(self, typename, bytes):
-        if bytes is None:
+    def bytes2value(self, typename, _bytes):
+        if _bytes is None:
             return None
         if typename in TYPENAMES_G2STRUCT:
-            return struct.unpack(TYPENAMES_G2STRUCT[typename], bytes)[0]
+            return TYPENAMES_G2STRUCT[typename].unpack(_bytes)[0]
         elif typename == 'string':
-            return repr('%s'%(bytes,))[1:-1]
+            return _bytes.decode('utf-8', 'replace')
         elif typename == 'bytearray':
-            return ' '.join(['%02x'%ord(i) for i in bytes])
+            return ' '.join(['%02x'%i for i in _bytes])
         else:
-            return bytes
+            return _bytes
     
     def scan_for_addr(self, addr):
         bits = self.get_pointer_width()
@@ -877,30 +917,30 @@ class GameConqueror():
             # temporarily disable model for scanresult_liststore for the sake of performance
             self.scanresult_liststore.clear()
             for line in lines:
-                line = line[line.find(']')+1:]
-                (a, v, t) = list(map(str.strip, line.split(',')[:3]))
-                a = '%x'%(int(a,16),)
-                t = t[1:-1]
+                line = line.decode()
+                tmp1 = line.find(',')
+                tmp2 = line.rfind(',')
+                a = line[line.find('x')+1:tmp1]
+                v = line[tmp1+2:tmp2]
+                t = line[tmp2+3:-2].split()[-1]
                 self.scanresult_liststore.append([a, v, t, True])
             self.scanresult_tv.set_model(self.scanresult_liststore)
 
-    # return (r1, r2) where all rows between r1 and r2 (INCLUSIVE) are visible
-    # return None if no row visible
+    # return range(r1, r2) where all rows between r1 and r2 (EXCLUSIVE) are visible
+    # return range(0, 0) if no row visible
     def get_visible_rows(self, treeview):
-        rect = treeview.get_visible_rect()
-        (x1,y1) = treeview.convert_tree_to_widget_coords(rect.x,rect.y)
-        (x2,y2) = treeview.convert_tree_to_widget_coords(rect.x+rect.width,rect.y+rect.height)
-        tup = treeview.get_path_at_pos(x1, y1)
-        if tup is None:
-            return None
-        r1 = tup[0][0]
-        tup = treeview.get_path_at_pos(x2, y2)
-        if tup is None:
-            r2 = len(treeview.get_model()) - 1    
-        else:
-            r2 = tup[0][0]
-        return (r1, r2)
- 
+        _range = treeview.get_visible_range()
+        try:
+            r1 = _range[0][0]
+        except:
+            r1 = 0
+        try:
+            r2 = _range[1][0] + 1
+        except:
+            max_rows = 20
+            r2 = min(max_rows + r1, len(treeview.get_model()))
+        return range(r1, r2)
+
     # read/write data periodically
     def data_worker(self):
         if (not self.is_scanning) and (self.pid != 0) and self.command_lock.acquire(0): # non-blocking
@@ -908,39 +948,34 @@ class GameConqueror():
 
             self.is_data_worker_working = True
             rows = self.get_visible_rows(self.scanresult_tv)
-            if rows is not None:
-                (r1, r2) = rows # [r1, r2] rows are visible
-                for i in range(r1, r2+1):
-                    row = self.scanresult_liststore[i]
-                    addr, cur_value, scanmem_type, valid = row
-                    if valid:
-                        new_value = self.read_value(addr, TYPENAMES_S2G[scanmem_type.strip()], cur_value)
-                        if new_value is not None:
-                            row[1] = str(new_value)
-                        else:
-                            row[1] = '??'
-                            row[3] = False
+            for i in rows:
+                row = self.scanresult_liststore[i]
+                addr, cur_value, scanmem_type, valid = row
+                if valid:
+                    new_value = self.read_value(addr, TYPENAMES_S2G[scanmem_type], cur_value)
+                    if new_value is not None:
+                        row[1] = str(new_value)
+                    else:
+                        row[1] = '??'
+                        row[3] = False
             # write locked values in cheat list and read unlocked values
-            for i in range(len(self.cheatlist_liststore)):
-                (lockflag, locked, desc, addr, typestr, value, valid) = self.cheatlist_liststore[i]
-                if not valid:
-                    continue
-                if locked:
-                    self.write_value(addr, typestr, value)
-                elif i in self.cheatlist_updates:
-                    self.write_value(addr, typestr, value)
-                    self.cheatlist_updates.remove(i)
-                else:
+            for i in self.cheatlist_liststore:
+                if i[1] and i[6]: # locked and valid
+                    self.write_value(i[3], i[4], i[5]) # addr, typestr, value
+            rows = self.get_visible_rows(self.cheatlist_tv)
+            for i in rows:
+                lockflag, locked, desc, addr, typestr, value, valid = self.cheatlist_liststore[i]
+                if valid and not locked:
                     newvalue = self.read_value(addr, typestr, value)
                     if newvalue is None:
                         self.cheatlist_liststore[i] = (lockflag, False, desc, addr, typestr, '??', False)
-                    elif newvalue != value and not locked and not self.cheatlist_editing:
+                    elif newvalue != value and not self.cheatlist_editing:
                         self.cheatlist_liststore[i] = (lockflag, locked, desc, addr, typestr, str(newvalue), valid)
-            self.is_data_worker_working = False 
+            self.is_data_worker_working = False
 
             Gdk.flush()
             Gdk.threads_leave()
-            self.command_lock.release()           
+            self.command_lock.release()
         return not self.exit_flag
 
     def read_value(self, addr, typestr, prev_value):
@@ -986,10 +1021,9 @@ class GameConqueror():
         Gtk.main()
 
     def check_backend_version(self):
-        if self.backend.get_version() != VERSION:
+        if self.backend.get_version() != VERSION.encode():
             self.show_error('Version of scanmem mismatched, you may encounter problems. Please make sure you are using the same version of Gamconqueror as scanmem.')
 
-    
 
 if __name__ == '__main__':
     GObject.threads_init()

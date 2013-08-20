@@ -969,7 +969,7 @@ class GameConqueror():
                     newvalue = self.read_value(addr, typestr, value)
                     if newvalue is None:
                         self.cheatlist_liststore[i] = (lockflag, False, desc, addr, typestr, '??', False)
-                    elif newvalue != value and not locked and not self.cheatlist_editing:
+                    elif newvalue != value and not self.cheatlist_editing:
                         self.cheatlist_liststore[i] = (lockflag, locked, desc, addr, typestr, str(newvalue), valid)
             self.is_data_worker_working = False
 

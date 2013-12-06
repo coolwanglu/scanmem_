@@ -1,0 +1,3 @@
+[submodule "fedora"]
+	path = fedora
+	url = git://pkgs.fedoraproject.org/scanmem.git

@@ -27,7 +27,7 @@ def offsetAdd(data,num):
 	
 def offsetAdjustTo(data,num1,num2):
 	'''Adjust the offset from num1 to num2'''
-	offsetAdd(data,num1-num2)
+	offsetAdd(data,num2-num1)
 	return data
 	
 def writeCheatlist(data,filename):

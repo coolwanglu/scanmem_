@@ -270,6 +270,7 @@ class GameConqueror():
         misc.menu_append_item(self.scanresult_popup, _('Add to cheat list'), self.scanresult_popup_cb, 'add_to_cheat_list')
         misc.menu_append_item(self.scanresult_popup, _('Browse this address'), self.scanresult_popup_cb, 'browse_this_address')
         misc.menu_append_item(self.scanresult_popup, _('Scan for this address'), self.scanresult_popup_cb, 'scan_for_this_address')
+        misc.menu_append_item(self.scanresult_popup, _('Copy address'), self.scanresult_popup_cb, 'copy_address')
         self.scanresult_popup.connect('button-press-event', self.check_for_leftclick)
         self.scanresult_popup.show_all()
 
@@ -278,6 +279,7 @@ class GameConqueror():
         misc.menu_append_item(self.cheatlist_popup, _('Browse this address'), self.cheatlist_popup_cb, 'browse_this_address')
         misc.menu_append_item(self.cheatlist_popup, _('Copy address'), self.cheatlist_popup_cb, 'copy_address')
         misc.menu_append_item(self.cheatlist_popup, _('Remove this entry'), self.cheatlist_popup_cb, 'remove_entry')
+        misc.menu_append_item(self.cheatlist_popup, _('Change to clipboard address'), self.cheatlist_popup_cb, 'change_to_address')
         self.cheatlist_popup.connect('button-press-event', self.check_for_leftclick)
         self.cheatlist_popup.show_all()
 
@@ -535,6 +537,9 @@ class GameConqueror():
         elif data == 'scan_for_this_address':
             self.scan_for_addr(int(addr,16))
             return True
+        elif data == 'copy_address':
+            CLIPBOARD.set_text(addr, len(addr))
+            return True
         return False
 
     def cheatlist_keypressed(self, cheatlist_tv, event, selection=None):
@@ -558,6 +563,13 @@ class GameConqueror():
             return True
         elif data == 'copy_address':
             CLIPBOARD.set_text(addr, len(addr))
+            return True
+        elif data == 'change_to_address':
+            #Change the address based on clipboard
+            newAddr = CLIPBOARD.wait_for_text()
+            dif = int(newAddr,16) - int(addr,16)
+            for x in self.cheatlist_liststore:
+                x[3] = hex(int(x[3],16) + dif)[2:]
             return True
         return False
 

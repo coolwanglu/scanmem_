@@ -22,7 +22,7 @@ def readCheatlist(filename):
 def offsetAdd(data,num):
 	'''Change add the offset of the address'''
 	for x in data['cheat_list']:
-		x[3] = hex(int(x[3],16) + num)[2:]
+		x[3] = hex(int(x[3],16) + num)[2:].replace('L','')
 	return data
 	
 def offsetAdjustTo(data,num1,num2):

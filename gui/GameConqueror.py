@@ -568,8 +568,18 @@ class GameConqueror():
             #Change the address based on clipboard
             newAddr = CLIPBOARD.wait_for_text()
             dif = int(newAddr,16) - int(addr,16)
+            
+            newList = []
             for x in self.cheatlist_liststore:
-                x[3] = hex(int(x[3],16) + dif)[2:]
+            	addr = hex(int(x[3],16) + dif)[2:].replace('L','')
+            	value = x[5]
+            	typestr = x[4]
+            	description = x[2]
+            	newList.insert(0,(addr,value,typestr,description))
+            self.cheatlist_liststore.clear()
+            for x in newList:
+                self.add_to_cheat_list(x[0],x[1],x[2],x[3]) #because it does not update directly if changing address, thus the best way is add to list
+                
             return True
         return False
 

@@ -40,15 +40,19 @@
 #include "scanmem.h"
 #include "show_message.h"
 
+unsigned long exe_start = 0;
+unsigned long exe_end = 0;
+
 bool readmaps(pid_t target, list_t * regions)
 {
     FILE *maps;
     char name[128], *line = NULL;
-    char exename[128];
+    char exelink[128];
     size_t len = 0;
+    bool exe_end_found = false;
 
 #define MAX_LINKBUF_SIZE 256
-    char linkbuf[MAX_LINKBUF_SIZE];
+    char exename[MAX_LINKBUF_SIZE];
     int linkbuf_size;
 
     /* check if target is valid */
@@ -65,6 +69,23 @@ bool readmaps(pid_t target, list_t * regions)
         }
 
         show_info("maps file located at %s opened.\n", name);
+
+        /* get executable name */
+        snprintf(exelink, sizeof(exelink), "/proc/%u/exe", target);
+        if ((linkbuf_size = readlink(exelink, exename, MAX_LINKBUF_SIZE)) > 0)
+        {
+            exename[linkbuf_size] = 0;
+            exe_start = 0;
+            exe_end = 0;
+        } else {
+            /* readlink may fail for special processes, just treat as empty in
+               order not to miss those regions */
+            exename[0] = 0;
+            /* can't search for the executable regions */
+            exe_start = 1;
+            exe_end = 1;
+            exe_end_found = true;
+        }
 
         /* read every line of the maps file */
         while (getline(&line, &len, maps) != -1) {
@@ -85,6 +106,17 @@ bool readmaps(pid_t target, list_t * regions)
             /* parse each line */
             if (sscanf(line, "%lx-%lx %c%c%c%c %x %x:%x %u %s", &start, &end, &read,
                     &write, &exec, &cow, &offset, &dev_major, &dev_minor, &inode, filename) >= 6) {
+
+                /* get the executable start and end */
+                if (!exe_start) {
+                    if ((exec == 'x') && strncmp(filename, exename, MAX_LINKBUF_SIZE) == 0)
+                        exe_start = start;
+                } else if (!exe_end_found) {
+                    if (filename[0] == '\0' || strncmp(filename, exename, MAX_LINKBUF_SIZE) == 0)
+                        exe_end = end;
+                    else
+                        exe_end_found = true;
+                }
 
                 /* must have permissions to read and write, and be non-zero size */
                 if ((write == 'w') && (read == 'r') && ((end - start) > 0)) {
@@ -110,16 +142,7 @@ bool readmaps(pid_t target, list_t * regions)
                                 break;
                             }
                             /* test if the region is mapped to the executable */
-                            snprintf(exename, sizeof(exename), "/proc/%u/exe", target);
-                            if((linkbuf_size = readlink(exename, linkbuf, MAX_LINKBUF_SIZE)) > 0)
-                            {
-                                linkbuf[linkbuf_size] = 0;
-                            }
-                            else /* readlink may fail for special processes, just treat as empty in order not to miss those regions */
-                            {
-                                linkbuf[0] = 0;
-                            }
-                            if (strncmp(filename, linkbuf, MAX_LINKBUF_SIZE) == 0)
+                            if (strncmp(filename, exename, MAX_LINKBUF_SIZE) == 0)
                                 useful = true;
                         break;
                 }

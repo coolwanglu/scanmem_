@@ -47,6 +47,9 @@ typedef struct {
     char filename[1];           /* associated file, must be last */
 } region_t;
 
+extern unsigned long exe_start;
+extern unsigned long exe_end;
+
 bool readmaps(pid_t target, list_t * regions);
 int compare_region_id(const region_t *a, const region_t *b);
 

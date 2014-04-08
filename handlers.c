@@ -232,14 +232,18 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                         value_t v;
                         value_t old;
                         void *address = remote_address_of_nth_element(loc.swath, loc.index /* ,MATCHES_AND_VALUES */);
+                        char off_info[48] = { 0 };
 
                         /* copy val onto v */
                         /* XXX: valcmp? make sure the sizes match */
                         old = data_to_val(loc.swath, loc.index /* ,MATCHES_AND_VALUES */);
                         v.flags = old.flags = loc.swath->data[loc.index].match_info;
                         uservalue2value(&v, &userval);
-                        
-                        show_info("setting *%p to %#"PRIx64"...\n", address, v.int64_value); 
+
+                        if ((unsigned long)address >= exe_start && (unsigned long)address <= exe_end)
+                            snprintf(off_info, sizeof(off_info), "(exe %p) ",
+                                (void *)((unsigned long)address - exe_start));
+                        show_info("setting *%p %sto %#"PRIx64"...\n", address, off_info, v.int64_value);
 
                         /* set the value specified */
                         if (setaddr(vars->target, address, &v) == false) {
@@ -265,6 +269,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                     if (flags_to_max_width_in_bytes(reading_swath_index->data[reading_iterator].match_info) > 0)
                     {
                         void *address = remote_address_of_nth_element(reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */);
+                        char off_info[48] = { 0 };
 
                         /* XXX: as above : make sure the sizes match */
                                     
@@ -273,7 +278,10 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                         v.flags = old.flags = reading_swath_index->data[reading_iterator].match_info;
                         uservalue2value(&v, &userval);
 
-                        show_info("setting *%p to %"PRIx64"...\n", address, v.int64_value); 
+                        if ((unsigned long)address >= exe_start && (unsigned long)address <= exe_end)
+                            snprintf(off_info, sizeof(off_info), "(exe %p) ",
+                                (void *)((unsigned long)address - exe_start));
+                        show_info("setting *%p %sto %"PRIx64"...\n", address, off_info, v.int64_value);
 
                         if (setaddr(vars->target, address, &v) == false) {
                             show_error("failed to set a value.\n");

@@ -72,6 +72,20 @@
 
 #define calloca(x,y) (memset(alloca((x) * (y)), 0x00, (x) * (y)))
 
+static inline bool addr_is_in_exe(unsigned long addr, struct mem_region *exe)
+{
+    return (addr >= exe->start && addr < exe->end);
+}
+
+static inline void fill_off_info(char *off_info, size_t size, void *address,
+                                 struct mem_region *exe)
+{
+    unsigned long addr = (unsigned long)address;
+
+    if (addr_is_in_exe(addr, exe))
+        snprintf(off_info, size, "(exe %p) ", (void *)(addr - exe->start));
+}
+
 bool handler__set(globals_t * vars, char **argv, unsigned argc)
 {
     unsigned block, seconds = 1;
@@ -232,14 +246,16 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                         value_t v;
                         value_t old;
                         void *address = remote_address_of_nth_element(loc.swath, loc.index /* ,MATCHES_AND_VALUES */);
+                        char off_info[48] = { 0 };
 
                         /* copy val onto v */
                         /* XXX: valcmp? make sure the sizes match */
                         old = data_to_val(loc.swath, loc.index /* ,MATCHES_AND_VALUES */);
                         v.flags = old.flags = loc.swath->data[loc.index].match_info;
                         uservalue2value(&v, &userval);
-                        
-                        show_info("setting *%p to %#"PRIx64"...\n", address, v.int64_value); 
+
+                        fill_off_info(off_info, sizeof(off_info), address, &vars->exe);
+                        show_info("setting *%p %sto %#"PRIx64"...\n", address, off_info, v.int64_value);
 
                         /* set the value specified */
                         if (setaddr(vars->target, address, &v) == false) {
@@ -265,6 +281,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                     if (flags_to_max_width_in_bytes(reading_swath_index->data[reading_iterator].match_info) > 0)
                     {
                         void *address = remote_address_of_nth_element(reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */);
+                        char off_info[48] = { 0 };
 
                         /* XXX: as above : make sure the sizes match */
                                     
@@ -273,7 +290,8 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                         v.flags = old.flags = reading_swath_index->data[reading_iterator].match_info;
                         uservalue2value(&v, &userval);
 
-                        show_info("setting *%p to %"PRIx64"...\n", address, v.int64_value); 
+                        fill_off_info(off_info, sizeof(off_info), address, &vars->exe);
+                        show_info("setting *%p %sto %"PRIx64"...\n", address, off_info, v.int64_value);
 
                         if (setaddr(vars->target, address, &v) == false) {
                             show_error("failed to set a value.\n");
@@ -463,7 +481,7 @@ bool handler__reset(globals_t * vars, char **argv, unsigned argc)
     }
 
     /* read in maps if a pid is known */
-    if (vars->target && readmaps(vars->target, vars->regions) != true) {
+    if (vars->target && readmaps(vars->target, vars->regions, &vars->exe) != true) {
         show_error("sorry, there was a problem getting a list of regions to search.\n");
         show_warn("the pid may be invalid, or you don't have permission.\n");
         vars->target = 0;

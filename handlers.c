@@ -700,8 +700,9 @@ bool handler__lregions(globals_t * vars, char **argv, unsigned argc)
     while (np) {
         region_t *region = np->data;
 
-        fprintf(stderr, "[%2u] %#10lx, %7lu bytes, %c%c%c, %s\n",
+        fprintf(stderr, "[%2u] %#10lx, %7lu bytes, %5s, %#10lx, %c%c%c, %s\n",
                 region->id, (unsigned long)region->start, region->size,
+                vars->region_types[region->type], region->load_off,
                 region->flags.read ? 'r' : '-',
                 region->flags.write ? 'w' : '-',
                 region->flags.exec ? 'x' : '-',

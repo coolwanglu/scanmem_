@@ -45,6 +45,7 @@ globals_t globals = {
     0,                          /* pid target */
     NULL,                       /* matches */
     0,                          /* match count */
+    false,                      /* match to region */
     0,                          /* scan progress */
     {                           /* region type names */
         "misc",
@@ -107,6 +108,8 @@ bool init()
                     SET_LONGDOC);
     registercommand("list", handler__list, vars->commands, LIST_SHRTDOC,
                     LIST_LONGDOC);
+    registercommand("rlist", handler__rlist, vars->commands, RLIST_SHRTDOC,
+                    RLIST_LONGDOC);
     registercommand("delete", handler__delete, vars->commands, DELETE_SHRTDOC,
                     DELETE_LONGDOC);
     registercommand("reset", handler__reset, vars->commands, RESET_SHRTDOC,

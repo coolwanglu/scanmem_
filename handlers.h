@@ -51,6 +51,20 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc);
 
 bool handler__list(globals_t * vars, char **argv, unsigned argc);
 
+#define RLIST_SHRTDOC "list all currently known matches and their regions"
+#define RLIST_LONGDOC "usage: rlist\n" \
+               "Print all the currently known matches, along with details about the\n" \
+               "match, such as its type, location, and last known value. The number in\n" \
+               "the left column is the `match-id`, this can be passed to other commands\n" \
+               "such as `set`, `delete`, etc.\n" \
+               "The flags displayed indicate the possible types of the variable.\n" \
+               "In contrast to the `list` command, the match region is displayed as well.\n" \
+               "Also the address is displayed additionally as an offset from the\n" \
+               "code load address or region start. This helps bypassing address\n" \
+               "space layout randomization (ASLR).\n"
+
+bool handler__rlist(globals_t * vars, char **argv, unsigned argc);
+
 #define DELETE_SHRTDOC "delete a known match by match-id"
 #define DELETE_LONGDOC "usage: delete match-id\n" \
                 "Remove the match `match-id` from the match list. The `match-id` can\n" \

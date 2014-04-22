@@ -59,6 +59,7 @@ typedef struct {
     pid_t target;
     matches_and_old_values_array *matches;
     long num_matches;
+    bool match_to_region;
     double scan_progress;
     const char *region_types[5];
     list_t *regions;

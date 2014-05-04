@@ -338,6 +338,7 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
     /* list all known matches */
     while (reading_swath_index->first_byte_in_child) {
 
+        bool region_found = false;
         match_flags flags = reading_swath_index->data[reading_iterator].match_info;
 
         /* Only actual matches are considered */
@@ -392,7 +393,34 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
 #define POINTER_FMT "%20p"
 #endif
 
-            fprintf(stdout, "[%2u] "POINTER_FMT", %s\n", i++, remote_address_of_nth_element(reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */), v);
+            if (vars->match_to_region) {
+                unsigned long address = (unsigned long)remote_address_of_nth_element(
+                    reading_swath_index, reading_iterator);
+                element_t *np = vars->regions->head;
+                /* print the region belonging to the match */
+                while (np) {
+                    region_t *region = np->data;
+                    if (address < (unsigned long)region->start + region->size &&
+                      address >= (unsigned long)region->start) {
+                        region_found = true;
+                        fprintf(stdout, "[%2u] "POINTER_FMT" (%p), %s\n", i++,
+                            (void *)address, (void *)(address - region->load_off), v);
+                        fprintf(stderr, "    [%2u] %#10lx, %7lu bytes, %5s, %#10lx, %c%c%c, %s\n",
+                            region->id, (unsigned long)region->start, region->size,
+                            vars->region_types[region->type], region->load_off,
+                            region->flags.read ? 'r' : '-',
+                            region->flags.write ? 'w' : '-',
+                            region->flags.exec ? 'x' : '-',
+                            region->filename[0] ? region->filename : "unassociated");
+                        break;
+                    }
+                    np = np->next;
+                }
+            }
+            if (!region_found) {
+                fprintf(stdout, "[%2u] "POINTER_FMT", %s\n", i++, remote_address_of_nth_element(
+                    reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */), v);
+            }
         }
 	
         /* Go on to the next one... */
@@ -407,6 +435,26 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
 
     free(v);
     return true;
+}
+
+bool handler__rlist(globals_t *vars, char **argv, unsigned argc)
+{
+    bool ret;
+
+    if (vars->target == 0) {
+        show_error("no target has been specified, see `help pid`.\n");
+        return false;
+    }
+
+    if (vars->regions->size == 0) {
+        show_info("no regions are known.\n");
+    }
+
+    vars->match_to_region = true;
+    ret = handler__list(vars, argv, argc);
+    vars->match_to_region = false;
+
+    return ret;
 }
 
 /* XXX: handle multiple deletes, eg delete !1 2 3 4 5 6 */
@@ -700,8 +748,9 @@ bool handler__lregions(globals_t * vars, char **argv, unsigned argc)
     while (np) {
         region_t *region = np->data;
 
-        fprintf(stderr, "[%2u] %#10lx, %7lu bytes, %c%c%c, %s\n",
+        fprintf(stderr, "[%2u] %#10lx, %7lu bytes, %5s, %#10lx, %c%c%c, %s\n",
                 region->id, (unsigned long)region->start, region->size,
+                vars->region_types[region->type], region->load_off,
                 region->flags.read ? 'r' : '-',
                 region->flags.write ? 'w' : '-',
                 region->flags.exec ? 'x' : '-',

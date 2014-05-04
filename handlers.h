@@ -41,13 +41,16 @@
 
 bool handler__set(globals_t * vars, char **argv, unsigned argc);
 
-#define LIST_SHRTDOC "list all currently known matches"
+#define LIST_SHRTDOC "list all currently known matches with region info"
 #define LIST_LONGDOC "usage: list\n" \
                "Print all the currently known matches, along with details about the\n" \
                "match, such as its type, location, and last known value. The number in\n" \
                "the left column is the `match-id`, this can be passed to other commands\n" \
                "such as `set`, `delete`, etc.\n" \
-               "The flags displayed indicate the possible types of the variable\n" 
+               "The flags displayed indicate the possible types of the variable.\n" \
+               "In a second line, the region info is displayed additionally per match.\n" \
+               "The address is also shown as an offset from the code load address or\n" \
+               "region start. This helps bypassing address space layout randomization (ASLR).\n"
 
 bool handler__list(globals_t * vars, char **argv, unsigned argc);
 

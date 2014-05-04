@@ -318,6 +318,7 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
 {
     unsigned i = 0;
     int buf_len = 128; /* will be realloc later if necessary */
+    element_t *prev_np = NULL;
     char *v = malloc(buf_len);
     if (v == NULL)
     {
@@ -331,6 +332,9 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
 
     if(!(vars->matches))
         return true;
+
+    if (vars->regions)
+        prev_np = vars->regions->head;
 
     matches_and_old_values_swath *reading_swath_index = (matches_and_old_values_swath *)vars->matches->swaths;
     int reading_iterator = 0;
@@ -392,7 +396,30 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
 #define POINTER_FMT "%20p"
 #endif
 
-            fprintf(stdout, "[%2u] "POINTER_FMT", %s\n", i++, remote_address_of_nth_element(reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */), v);
+            void *address = remote_address_of_nth_element(reading_swath_index,
+                reading_iterator /* ,MATCHES_AND_VALUES */);
+            unsigned long address_ul = (unsigned long) address;
+            element_t *np = prev_np;
+            fprintf(stdout, "[%2u] "POINTER_FMT", %s\n", i++, address, v);
+            /* print the region info belonging to the match */
+            while (np) {
+                region_t *region = np->data;
+                unsigned long region_start = (unsigned long)region->start;
+                if (address_ul < region_start + region->size &&
+                  address_ul >= region_start) {
+                    prev_np = np;
+                    fprintf(stderr, "  --> [%2u] %#14lx, %5s, %#14lx, "
+                        "%#10lx, %c%c%c, %s\n", region->id,
+                        region_start, vars->region_types[region->type],
+                        region->load_off, address_ul - region->load_off,
+                        region->flags.read ? 'r' : '-',
+                        region->flags.write ? 'w' : '-',
+                        region->flags.exec ? 'x' : '-',
+                        region->filename[0] ? region->filename : "unassociated");
+                    break;
+                }
+                np = np->next;
+            }
         }
 	
         /* Go on to the next one... */

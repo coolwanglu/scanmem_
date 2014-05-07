@@ -37,8 +37,10 @@ typedef enum {
     REGION_TYPE_CODE,
     REGION_TYPE_EXE,
     REGION_TYPE_HEAP,
-    REGION_TYPE_STACK,
+    REGION_TYPE_STACK
 } region_type_t;
+
+extern const char *region_type_names[];
 
 /* a region obtained from /proc/pid/maps, these are searched for matches */
 typedef struct {

@@ -40,6 +40,9 @@
 #include "scanmem.h"
 #include "show_message.h"
 
+const char *region_type_names[] =
+    { "misc", "code", "exe", "heap", "stack" };
+
 bool readmaps(pid_t target, list_t * regions)
 {
     FILE *maps;

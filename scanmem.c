@@ -46,13 +46,6 @@ globals_t globals = {
     NULL,                       /* matches */
     0,                          /* match count */
     0,                          /* scan progress */
-    {                           /* region type names */
-        "misc",
-        "code",
-        "exe",
-        "heap",
-        "stack",
-    },
     NULL,                       /* regions */
     NULL,                       /* commands */
     NULL,                       /* current_cmdline */

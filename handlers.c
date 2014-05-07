@@ -72,6 +72,15 @@
 
 #define calloca(x,y) (memset(alloca((x) * (y)), 0x00, (x) * (y)))
 
+/* try to determine the size of a pointer */
+#if ULONGMAX == 4294967295UL
+#define POINTER_FMT "%10p"
+#elif ULONGMAX == 18446744073709551615UL
+#define POINTER_FMT "%14p"
+#else
+#define POINTER_FMT "%14p"
+#endif
+
 bool handler__set(globals_t * vars, char **argv, unsigned argc)
 {
     unsigned block, seconds = 1;
@@ -387,30 +396,30 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
                 break;
             }
 
-/* try to determine the size of a pointer */
-#if ULONGMAX == 4294967295UL
-#define POINTER_FMT "%10p"
-#elif ULONGMAX == 18446744073709551615UL
-#define POINTER_FMT "%20p"
-#else
-#define POINTER_FMT "%20p"
-#endif
-
             void *address = remote_address_of_nth_element(reading_swath_index,
                 reading_iterator /* ,MATCHES_AND_VALUES */);
-            unsigned long address_ul = (unsigned long) address;
-            /* get region info belonging to the match */
+            unsigned long address_ul = (unsigned long)address;
+            int region_id = 99;
+            void *match_off = NULL;
+            const char *region_type = "??";
+            /* get region info belonging to the match -
+             * note: we assume the regions list and matches to be sorted
+             */
             while (np) {
                 region_t *region = np->data;
                 unsigned long region_start = (unsigned long)region->start;
-                if (address_ul < region_start + region->size) {
-                    fprintf(stdout, "[%2u] "POINTER_FMT", %2u + %#10lx, %5s, %s\n",
-                    i++, address, region->id, address_ul - region->load_off,
-                    vars->region_types[region->type], v);
+                if (address_ul < region_start + region->size &&
+                  address_ul >= region_start) {
+                    region_id = region->id;
+                    match_off = (void *)(address_ul - region->load_off);
+                    region_type = region_type_names[region->type];
                     break;
                 }
                 np = np->next;
             }
+            fprintf(stdout, "[%2u] "POINTER_FMT", %2u + "POINTER_FMT
+                ", %5s, %s\n", i++, address, region_id, match_off,
+                region_type, v);
         }
 	
         /* Go on to the next one... */
@@ -718,9 +727,11 @@ bool handler__lregions(globals_t * vars, char **argv, unsigned argc)
     while (np) {
         region_t *region = np->data;
 
-        fprintf(stderr, "[%2u] %#14lx, %7lu bytes, %5s, %#14lx, %c%c%c, %s\n",
-                region->id, (unsigned long)region->start, region->size,
-                vars->region_types[region->type], region->load_off,
+        fprintf(stderr, "[%2u] "POINTER_FMT", %7lu bytes, %5s, "
+                POINTER_FMT", %c%c%c, %s\n",
+                region->id, region->start, region->size,
+                region_type_names[region->type],
+                (void *)region->load_off,
                 region->flags.read ? 'r' : '-',
                 region->flags.write ? 'w' : '-',
                 region->flags.exec ? 'x' : '-',

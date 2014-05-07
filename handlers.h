@@ -41,7 +41,7 @@
 
 bool handler__set(globals_t * vars, char **argv, unsigned argc);
 
-#define LIST_SHRTDOC "list all currently known matches with region info"
+#define LIST_SHRTDOC "list all currently known matches"
 #define LIST_LONGDOC "usage: list\n" \
                "Print all the currently known matches, along with details about the\n" \
                "match, such as its type, location, and last known value. The number in\n" \

@@ -40,6 +40,7 @@ typedef enum {
     REGION_TYPE_STACK
 } region_type_t;
 
+#define REGION_TYPE_NAMES { "misc", "code", "exe", "heap", "stack" }
 extern const char *region_type_names[];
 
 /* a region obtained from /proc/pid/maps, these are searched for matches */

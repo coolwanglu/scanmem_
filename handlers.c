@@ -73,9 +73,12 @@
 #define calloca(x,y) (memset(alloca((x) * (y)), 0x00, (x) * (y)))
 
 /* try to determine the size of a pointer */
-#if ULONGMAX == 4294967295UL
+#ifndef ULONG_MAX
+#warning ULONG_MAX is not defined!
+#endif
+#if ULONG_MAX == 4294967295UL
 #define POINTER_FMT "%8lx"
-#elif ULONGMAX == 18446744073709551615UL
+#elif ULONG_MAX == 18446744073709551615UL
 #define POINTER_FMT "%12lx"
 #else
 #define POINTER_FMT "%12lx"

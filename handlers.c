@@ -411,7 +411,7 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
                 if (address_ul < region_start + region->size &&
                   address_ul >= region_start) {
                     region_id = region->id;
-                    match_off = (void *)(address_ul - region->load_off);
+                    match_off = (void *)(address_ul - region->load_addr);
                     region_type = region_type_names[region->type];
                     break;
                 }
@@ -731,7 +731,7 @@ bool handler__lregions(globals_t * vars, char **argv, unsigned argc)
                 POINTER_FMT", %c%c%c, %s\n",
                 region->id, region->start, region->size,
                 region_type_names[region->type],
-                (void *)region->load_off,
+                (void *)region->load_addr,
                 region->flags.read ? 'r' : '-',
                 region->flags.write ? 'w' : '-',
                 region->flags.exec ? 'x' : '-',

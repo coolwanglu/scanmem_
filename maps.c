@@ -50,7 +50,7 @@ bool readmaps(pid_t target, list_t * regions)
     size_t len = 0;
     unsigned int code_regions = 0;
     bool is_exe = false;
-    unsigned long prev_end = 0, load_off = 0;
+    unsigned long prev_end = 0, load_addr = 0;
 
 #define MAX_LINKBUF_SIZE 256
     char linkbuf[MAX_LINKBUF_SIZE], *exename = linkbuf;
@@ -103,7 +103,7 @@ bool readmaps(pid_t target, list_t * regions)
             if (sscanf(line, "%lx-%lx %c%c%c%c %x %x:%x %u %s", &start, &end, &read,
                     &write, &exec, &cow, &offset, &dev_major, &dev_minor, &inode, filename) >= 6) {
 
-                /* get load offset for consecutive code regions (.text, .rodata, .data) */
+                /* get load address for consecutive code regions (.text, .rodata, .data) */
                 if (code_regions > 0) {
                     if (exec == 'x' || (read == 'r' && write == 'w' &&
                       start != prev_end) || code_regions >= 4) {
@@ -119,7 +119,7 @@ bool readmaps(pid_t target, list_t * regions)
                         if (strncmp(filename, exename, MAX_LINKBUF_SIZE) == 0)
                             is_exe = true;
                     }
-                    load_off = start;
+                    load_addr = start;
                 }
                 prev_end = end;
 
@@ -178,7 +178,7 @@ bool readmaps(pid_t target, list_t * regions)
                 map->start = (void *) start;
                 map->size = (unsigned long) (end - start);
                 map->type = type;
-                map->load_off = load_off;
+                map->load_addr = load_addr;
 
                 /* setup other permissions */
                 map->flags.exec = (exec == 'x');

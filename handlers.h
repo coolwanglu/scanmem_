@@ -49,7 +49,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc);
                "such as `set`, `delete`, etc.\n" \
                "The flags displayed indicate the possible types of the variable.\n" \
                "Also the region id, an offset and the region type belonging to a match\n" \
-               "are displayed. The offset is used from the code load offset or region start.\n" \
+               "are displayed. The offset is used from the code load address or region start.\n" \
                "This helps bypassing address space layout randomization (ASLR).\n"
 
 bool handler__list(globals_t * vars, char **argv, unsigned argc);
@@ -104,10 +104,10 @@ bool handler__dregion(globals_t * vars, char **argv, unsigned argc);
 #define LREGIONS_SHRTDOC "list all known regions"
 #define LREGIONS_LONGDOC "usage: lregions\n" \
                 "Print all the currently known regions, along with details such as the\n" \
-                "start address, size, region type, load offset, permissions and associated\n" \
+                "start address, size, region type, load address, permissions and associated\n" \
                 "filename. The number in the left column is the `region-id`, this can be\n" \
                 "passed to other commands that process regions, such as `dregion`.\n" \
-                "The load offset is the start of the .text region for the executable\n" \
+                "The load address is the start of the .text region for the executable\n" \
                 "or libraries. Otherwise, it is the region start.\n"
 
 bool handler__lregions(globals_t * vars, char **argv, unsigned argc);

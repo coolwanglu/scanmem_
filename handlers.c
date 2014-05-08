@@ -1266,7 +1266,7 @@ bool handler__dump(globals_t * vars, char **argv, unsigned argc)
     
     /* check address */
     errno = 0;
-    addr = (void *)(strtoll(argv[1], &endptr, 16));
+    addr = (void *)(strtol(argv[1], &endptr, 16));
     if ((errno != 0) || (*endptr != '\0'))
     {
         show_error("bad address, see `help dump`.\n");
@@ -1472,7 +1472,7 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
 
     /* check address */
     errno = 0;
-    addr = (void *)strtoll(argv[2], &endptr, 16);
+    addr = (void *)strtol(argv[2], &endptr, 16);
     if ((errno != 0) || (*endptr != '\0'))
     {
         show_error("bad address, see `help write`.\n");

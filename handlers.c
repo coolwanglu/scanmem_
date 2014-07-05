@@ -731,8 +731,7 @@ bool handler__lregions(globals_t * vars, char **argv, unsigned argc)
     /* print a list of regions that are searched */
     while (np) {
         region_t *region = np->data;
-		
-	
+			
         fprintf(stderr, "[%2u] "POINTER_FMT", %7lu bytes, %5s, "
                 POINTER_FMT", %c%c%c, %s\n", region->id,
                 (unsigned long)region->start, region->size,

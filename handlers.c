@@ -729,13 +729,13 @@ bool handler__lregions(globals_t * vars, char **argv, unsigned argc)
     }
 
     fprintf(stderr,
-			"\033[7m id,  "
-			POINTER_COL
-			" %14s "
-			" type,  "
-			POINTER_COL
-			" access,"
-			" file \033[0m \n", "start addr,", " size,", "load addr,");
+	    "\033[7m id,  "
+	     POINTER_COL
+	     " %14s "
+	     " type,  "
+	     POINTER_COL
+	     " access,"
+	     " file \033[0m \n", "start addr,", " size,", "load addr,");
 
     /* print a list of regions that are searched */
     while (np) {

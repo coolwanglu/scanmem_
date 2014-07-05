@@ -725,11 +725,14 @@ bool handler__lregions(globals_t * vars, char **argv, unsigned argc)
     if (vars->regions->size == 0) {
         show_info("no regions are known.\n");
     }
-    
+
+    fprintf(stderr, "\033[7m id,        start,          size,  type,    load addr, access, file \033[0m \n");
+
     /* print a list of regions that are searched */
     while (np) {
         region_t *region = np->data;
-
+		
+	
         fprintf(stderr, "[%2u] "POINTER_FMT", %7lu bytes, %5s, "
                 POINTER_FMT", %c%c%c, %s\n", region->id,
                 (unsigned long)region->start, region->size,

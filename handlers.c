@@ -78,8 +78,10 @@
 #endif
 #if ULONG_MAX == 4294967295UL
 #define POINTER_FMT "%8lx"
+#define POINTER_COL "%8s"
 #elif ULONG_MAX == 18446744073709551615UL
 #define POINTER_FMT "%12lx"
+#define POINTER_COL "%12s"
 #else
 #define POINTER_FMT "%12lx"
 #endif
@@ -725,11 +727,20 @@ bool handler__lregions(globals_t * vars, char **argv, unsigned argc)
     if (vars->regions->size == 0) {
         show_info("no regions are known.\n");
     }
-    
+
+    fprintf(stderr,
+	    "\033[7m id,  "
+	     POINTER_COL
+	     " %14s "
+	     " type,  "
+	     POINTER_COL
+	     " access,"
+	     " file \033[0m \n", "start addr,", " size,", "load addr,");
+
     /* print a list of regions that are searched */
     while (np) {
         region_t *region = np->data;
-
+			
         fprintf(stderr, "[%2u] "POINTER_FMT", %7lu bytes, %5s, "
                 POINTER_FMT", %c%c%c, %s\n", region->id,
                 (unsigned long)region->start, region->size,
